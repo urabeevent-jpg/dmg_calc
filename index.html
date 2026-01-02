@@ -182,7 +182,7 @@
 </head>
 <body>
 
-    <h1>⚡ DQX　防衛用ダメージ計算機 v17</h1>
+    <h1>⚡ DQX 防衛用ダメージ計算機 v18</h1>
 
     <div class="calculator-container">
 
@@ -246,10 +246,10 @@
 
         <div class="step-section">
             <div class="step-left">
-                <div class="step-label"><span class="step-icon">🔥</span> 属性ダメージ枠</div>
+                <div class="step-label"><span class="step-icon">🔥</span> 属性ダメージ</div>
                 <div class="input-group">
                     <div class="input-item">
-                        <span>戦神ベルト等</span>
+                        <span>ベルト</span>
                         <select id="attrBelt">
                             <option value="0">なし</option>
                             <option value="0.15">15%</option>
@@ -260,13 +260,14 @@
                             <option value="0.10">10%</option>
                             <option value="0.09">9%</option>
                             <option value="0.08">8%</option>
+                            <option value="0.07">7%</option>
                             <option value="0.06">6%</option>
                             <option value="0.05">5%</option>
                             <option value="0.04">4%</option>
                         </select>
                     </div>
                     <div class="input-item">
-                        <span>指輪/その他</span>
+                        <span>断罪</span>
                         <select id="attrRing">
                             <option value="0">なし</option>
                             <option value="0.05">5%</option>
@@ -274,6 +275,15 @@
                             <option value="0.03">3%</option>
                             <option value="0.025">2.5%</option>
                             <option value="0.02">2%</option>
+                        </select>
+                    </div>
+                    <div class="input-item">
+                        <span>心</span>
+                        <select id="attrHeart">
+                            <option value="0">なし</option>
+                            <option value="0.03">3%</option>
+                            <option value="0.02">2%</option>
+                            <option value="0.01">1%</option>
                         </select>
                     </div>
                 </div>
@@ -285,10 +295,10 @@
 
         <div class="step-section">
             <div class="step-left">
-                <div class="step-label"><span class="step-icon">🐲</span> 種族特攻枠</div>
+                <div class="step-label"><span class="step-icon">🐲</span> 種族特攻</div>
                 <div class="input-group">
                     <div class="input-item">
-                        <span>戦神ベルト等</span>
+                        <span>ベルト</span>
                         <select id="raceBelt">
                             <option value="0">なし</option>
                             <option value="0.12">12%</option>
@@ -303,7 +313,7 @@
                         </select>
                     </div>
                     <div class="input-item">
-                        <span>断罪/武器等</span>
+                        <span>断罪</span>
                         <select id="raceRing">
                             <option value="0">なし</option>
                             <option value="0.11">11%</option>
@@ -326,9 +336,8 @@
 
         <div class="step-section">
             <div class="step-left">
-                <div class="step-label"><span class="step-icon">📢</span> 与ダメUP枠</div>
+                <div class="step-label"><span class="step-icon">📢</span> 与ダメUP</div>
                 <div class="step-controls toggle-group">
-                    <button class="toggle-btn group-dmg" data-val="0.5" onclick="toggleBtn(this)">ウォークライ</button>
                     <button class="toggle-btn group-dmg" data-val="0.5" onclick="toggleBtn(this)">猛攻の書</button>
                     <button class="toggle-btn group-mr" data-val="0.5" data-exclusive="mr" onclick="toggleBtn(this)">MR(大)</button>
                     <button class="toggle-btn group-mr" data-val="0.2" data-exclusive="mr" onclick="toggleBtn(this)">MR(小)</button>
@@ -411,8 +420,7 @@
             'nymph': { name: 'ニンフの妖弓', atk: 325, type: 'bow' }
         };
 
-        // スキル定義 (m:倍率, t:タイプ, orb:宝珠倍率[0.06など])
-        // t='R' (右), 'L' (左), 'F' (固定)
+        // スキル定義
         const skills = {
             'normal': { name: '通常攻撃', hits: [{m:1.0, t:'R'}], orb:0 },
             'bato_norm': { name: 'バト通常(二刀)', hits: [{m:1.0, t:'R'}, {m:1.0, t:'L'}], orb:0 },
@@ -433,8 +441,12 @@
         const inputs = {
             base: document.getElementById('baseDmg'),
             baseValDisplay: document.getElementById('baseValDisplay'),
+            
+            // 属性3種
             attrBelt: document.getElementById('attrBelt'),
             attrRing: document.getElementById('attrRing'),
+            attrHeart: document.getElementById('attrHeart'),
+            
             raceBelt: document.getElementById('raceBelt'),
             raceRing: document.getElementById('raceRing'),
             btnForceNorm: document.getElementById('btnForceNorm'),
@@ -520,7 +532,7 @@
             }
             if (jobKey === 'ranger') {
                 if (wepType === 'claw') {
-                    availSkills.push('haya_norm'); // 隼orツメ通常
+                    availSkills.push('haya_norm'); 
                     availSkills.push('liger');
                 }
             }
@@ -586,7 +598,6 @@
             currentHitCritBases = [];
             let totalBaseDmg = 0;
 
-            // 宝珠倍率 (1.0 + orb%)
             let orbMult = 1.0 + (skillData.orb || 0);
 
             skillData.hits.forEach(hit => {
@@ -594,7 +605,6 @@
                 let critDmg = 0;
 
                 if (hit.t === 'F') {
-                    // 固定ダメにも宝珠は乗る (1500 * 1.3 = 1950)
                     dmg = hit.m * orbMult; 
                     critDmg = dmg;
                 } else {
@@ -602,10 +612,7 @@
                     let base = (useAtk / 2) - (finalDef / 4);
                     if (base < 1) base = 1;
                     
-                    // (基礎 * 倍率) * 宝珠倍率
                     dmg = (base * hit.m) * orbMult;
-                    
-                    // 会心
                     critDmg = (useAtk * hit.m) * orbMult;
                 }
                 
@@ -662,7 +669,11 @@
         }
 
         function calculate() {
-            let attrMag = 1.0 + parseFloat(inputs.attrBelt.value) + parseFloat(inputs.attrRing.value);
+            // 属性3項目の合計
+            let attrMag = 1.0 
+                + parseFloat(inputs.attrBelt.value) 
+                + parseFloat(inputs.attrRing.value)
+                + parseFloat(inputs.attrHeart.value);
             
             let forceBonus = inputs.btnForceNorm.classList.contains('active') ? 0.1 : 0.0;
             let raceMag = 1.0 + parseFloat(inputs.raceBelt.value) + parseFloat(inputs.raceRing.value) + forceBonus;
@@ -685,11 +696,8 @@
             });
             let fbMag = 1.0 + fbAdd;
 
-            // --- 通常ダメージ計算 ---
             let sumD1=0, sumD6=0;
             let finalHitsNormal = [];
-
-            // ビーム表示用
             let sumD2=0, sumD3=0, sumD4=0, sumD5=0;
 
             currentHitBases.forEach(baseVal => {
@@ -707,7 +715,6 @@
                 finalHitsNormal.push(d6); 
             });
 
-            // --- 会心ダメージ計算 ---
             let sumCrit=0;
             let finalHitsCrit = [];
 
@@ -724,7 +731,6 @@
                 finalHitsCrit.push(d6);
             });
 
-            // ビーム描画
             const values = [sumD1, sumD2, sumD3, sumD4, sumD5, sumD6];
             const maxRef = Math.max((sumD1 || 1000) * 25, 2000); 
 
@@ -831,5 +837,3 @@
     </script>
 </body>
 </html>
-
-
