@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DQX 防衛用ダメージ計算機</title>
+    <title>DQX 防衛用ダメージ計算機 v19</title>
     <style>
         body {
             font-family: "Helvetica Neue", Arial, sans-serif;
@@ -14,6 +14,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding-bottom: 80px; /* ワイプ用スペース確保 */
         }
 
         h1 { margin-bottom: 20px; font-size: 1.5rem; color: #ff2a6d; text-shadow: 0 0 10px rgba(255, 42, 109, 0.5); }
@@ -163,7 +164,6 @@
         button.toggle-btn:hover { background: #2f2f3e; }
         button.toggle-btn.active { color: white; font-weight: bold; }
 
-        /* 色分け */
         button.toggle-btn.group-dmg.active { background: #ff2a6d; border-color: #ff2a6d; box-shadow: 0 0 8px rgba(255, 42, 109, 0.6); }
         button.toggle-btn.group-mr.active { background: #05d9e8; color: #000; border-color: #05d9e8; box-shadow: 0 0 8px rgba(5, 217, 232, 0.6); }
         button.toggle-btn.group-taken.active { background: #ff9f1c; color: #000; border-color: #ff9f1c; box-shadow: 0 0 8px rgba(255, 159, 28, 0.6); }
@@ -178,11 +178,41 @@
         button.toggle-btn.btn-force-norm { border: 1px dashed #ff9f1c; color:#ff9f1c; flex:none; width: auto;}
         button.toggle-btn.btn-force-norm.active { background: #ff9f1c; color: #000; border-color: #ff9f1c; }
 
+        /* 追従ワイプ (Floating Wipe) */
+        .floating-wipe {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(15, 52, 96, 0.95);
+            border: 2px solid #ff2a6d;
+            border-radius: 12px;
+            padding: 8px 15px;
+            text-align: right;
+            z-index: 1000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            transition: opacity 0.3s, transform 0.3s;
+            /* 重要：クリックを透過させる */
+            pointer-events: none;
+            min-width: 120px;
+        }
+        /* 隠すクラス */
+        .floating-wipe.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .wipe-label { font-size: 0.7rem; color: #aaa; margin-bottom: -3px;}
+        .wipe-value { font-size: 1.6rem; font-weight: bold; color: #fff; font-family: "Consolas", monospace; }
+
     </style>
 </head>
 <body>
 
     <h1>⚡ DQX 防衛用ダメージ計算機</h1>
+
+    <div id="floatingWipe" class="floating-wipe hidden">
+        <div class="wipe-label">Total Damage</div>
+        <div class="wipe-value" id="wipeResult">0</div>
+    </div>
 
     <div class="calculator-container">
 
@@ -420,7 +450,6 @@
             'nymph': { name: 'ニンフの妖弓', atk: 325, type: 'bow' }
         };
 
-        // スキル定義
         const skills = {
             'normal': { name: '通常攻撃', hits: [{m:1.0, t:'R'}], orb:0 },
             'bato_norm': { name: 'バト通常(二刀)', hits: [{m:1.0, t:'R'}, {m:1.0, t:'L'}], orb:0 },
@@ -442,7 +471,6 @@
             base: document.getElementById('baseDmg'),
             baseValDisplay: document.getElementById('baseValDisplay'),
             
-            // 属性3種
             attrBelt: document.getElementById('attrBelt'),
             attrRing: document.getElementById('attrRing'),
             attrHeart: document.getElementById('attrHeart'),
@@ -487,6 +515,23 @@
                 inputs.calcJob.appendChild(opt);
             }
             updateOptions();
+            
+            // 追従ワイプの監視
+            setupObserver();
+        }
+
+        function setupObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const wipe = document.getElementById('floatingWipe');
+                    if (entry.isIntersecting) {
+                        wipe.classList.add('hidden'); // 結果が見えたら消す
+                    } else {
+                        wipe.classList.remove('hidden'); // 結果が見えなくなったら出す
+                    }
+                });
+            }, { threshold: 0.1 });
+            observer.observe(document.querySelector('.result-panel'));
         }
 
         function updateOptions() {
@@ -669,7 +714,6 @@
         }
 
         function calculate() {
-            // 属性3項目の合計
             let attrMag = 1.0 
                 + parseFloat(inputs.attrBelt.value) 
                 + parseFloat(inputs.attrRing.value)
@@ -731,6 +775,7 @@
                 finalHitsCrit.push(d6);
             });
 
+            // ビーム
             const values = [sumD1, sumD2, sumD3, sumD4, sumD5, sumD6];
             const maxRef = Math.max((sumD1 || 1000) * 25, 2000); 
 
@@ -756,7 +801,9 @@
             }
 
             const finalVal = sumD6;
-            document.getElementById('finalResult').innerText = finalVal.toLocaleString();
+            const finalStr = finalVal.toLocaleString();
+            document.getElementById('finalResult').innerText = finalStr;
+            document.getElementById('wipeResult').innerText = finalStr; // ワイプも更新
             
             const totalMultiplier = (sumD1 > 0) ? (finalVal / sumD1).toFixed(2) : "1.00";
             document.getElementById('totalMult').innerText = `x ${totalMultiplier} 倍`;
@@ -837,4 +884,3 @@
     </script>
 </body>
 </html>
-
