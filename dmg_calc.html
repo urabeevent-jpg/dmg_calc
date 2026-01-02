@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DQX ビジュアルダメージ計算機 v16</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background-color: #12121c;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { margin-bottom: 20px; font-size: 1.5rem; color: #ff2a6d; text-shadow: 0 0 10px rgba(255, 42, 109, 0.5); }
+
+        .calculator-container {
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+        }
+
+        /* ステップセクション */
+        .step-section {
+            background: rgba(30, 30, 40, 0.85);
+            border-radius: 8px;
+            padding: 12px 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 2;
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 0;
+        }
+        
+        .step-left { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .step-label { font-weight: bold; font-size: 0.95rem; color: #e0e0e0; display: flex; align-items: center; gap: 6px;}
+        .step-icon { font-size: 1.3rem; }
+        
+        .input-group { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .input-item { display: flex; flex-direction: column; font-size: 0.75rem; color: #aaa; }
+
+        .step-result {
+            text-align: right;
+            font-family: "Consolas", "Monaco", monospace;
+            font-size: 1.2rem;
+            color: #05d9e8;
+            min-width: 95px;
+            margin-top: 5px;
+            text-shadow: 0 0 5px rgba(5, 217, 232, 0.3);
+        }
+        .step-result small { display: block; font-size: 0.7rem; color: #888; font-family: sans-serif; }
+
+        /* ビーム */
+        .beam-connector {
+            height: 35px;
+            margin: 0 auto;
+            background: cyan;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 0 15px cyan;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 結果パネル */
+        .result-panel {
+            margin-top: 10px;
+            background: linear-gradient(145deg, #0f3460, #16213e);
+            border-radius: 15px;
+            border: 2px solid #ff2a6d;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            z-index: 3;
+            box-shadow: 0 0 20px rgba(255, 42, 109, 0.2);
+        }
+
+        .final-damage { font-size: 3.5rem; font-weight: bold; color: #fff; line-height: 1.1; margin: 10px 0; }
+        .total-multiplier { font-size: 1rem; color: #ff9f1c; font-weight: bold; margin-bottom: 5px; }
+        
+        /* 内訳表示エリア */
+        .breakdown-display {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 15px;
+            font-family: "Consolas", monospace;
+            color: #88e1f2;
+            font-size: 0.9rem;
+            text-align: left;
+            border: 1px dashed #05d9e8;
+        }
+        .breakdown-row { margin-bottom: 5px; }
+        .crit-label { color: #ff2a6d; font-weight: bold; }
+        .val-overflow { color: #ff9f1c; font-weight: bold; } 
+
+        .compare-tools {
+            margin-top: 20px; padding-top: 15px; border-top: 1px dashed #555;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .btn-snapshot {
+            background: #333; color: #ddd; border: 1px solid #666;
+            padding: 8px 25px; border-radius: 20px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-snapshot:hover { background: #555; color: #fff; border-color: #fff; }
+        .diff-display {
+            font-size: 1.1rem; font-weight: bold; display: none;
+            padding: 5px 15px; border-radius: 5px; background: rgba(0,0,0,0.4);
+        }
+        .diff-plus { color: #00ff9d; } .diff-minus { color: #ff3860; } .diff-even { color: #aaa; }
+
+        input[type="number"] { 
+            padding: 5px; width: 70px; border-radius: 4px; border: none; 
+            text-align: right; background: #2a2a35; color: white; font-size: 1rem;
+        }
+        select { 
+            padding: 5px; border-radius: 4px; border: none; 
+            background: #2a2a35; color: #fff; cursor: pointer; font-size: 0.9rem;
+        }
+        
+        /* 設定パネル（Step1を統合） */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2列レイアウト */
+            gap: 8px;
+            margin-top: 5px;
+            padding: 5px;
+            width: 100%;
+        }
+        .settings-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+        .settings-item select, .settings-item input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .calc-display { 
+            grid-column: 1 / -1; /* 全幅 */
+            color: #aaa; font-size: 0.8rem; text-align: right; 
+            border-top: 1px solid #444; margin-top: 5px; padding-top: 5px;
+            display: flex; justify-content: space-between;
+        }
+        .calc-display span { color: #fff; font-weight: bold; font-size: 0.95rem; }
+
+        /* トグルボタン */
+        .toggle-group { display: flex; gap: 4px; flex-wrap: wrap;}
+        button.toggle-btn {
+            padding: 6px 8px; border: 1px solid #444; background: #1f1f2e;
+            color: #888; cursor: pointer; border-radius: 6px; font-size: 0.75rem;
+            flex: 1; min-width: 40px; text-align: center;
+        }
+        button.toggle-btn:hover { background: #2f2f3e; }
+        button.toggle-btn.active { color: white; font-weight: bold; }
+
+        /* 色分け */
+        button.toggle-btn.group-dmg.active { background: #ff2a6d; border-color: #ff2a6d; box-shadow: 0 0 8px rgba(255, 42, 109, 0.6); }
+        button.toggle-btn.group-mr.active { background: #05d9e8; color: #000; border-color: #05d9e8; box-shadow: 0 0 8px rgba(5, 217, 232, 0.6); }
+        button.toggle-btn.group-taken.active { background: #ff9f1c; color: #000; border-color: #ff9f1c; box-shadow: 0 0 8px rgba(255, 159, 28, 0.6); }
+        button.toggle-btn.group-fb.active { background: #b5179e; border-color: #b5179e; box-shadow: 0 0 8px rgba(181, 23, 158, 0.6); }
+        button.toggle-btn.group-down.active { background: #e0aaff; color: #240046; border-color: #e0aaff; box-shadow: 0 0 8px rgba(224, 170, 255, 0.6); }
+        
+        button.toggle-btn.btn-baiki.active { background: #ff2a6d; border-color: #ff2a6d; }
+        /* アヌビスボタン（金色） */
+        button.toggle-btn[data-lukani="0.0"].active {
+            background: linear-gradient(135deg, #ffd700, #ff8c00); 
+            color: #000; border-color: #ffd700; box-shadow: 0 0 10px #ffd700;
+        }
+        
+        button.toggle-btn.btn-force-norm { border: 1px dashed #ff9f1c; color:#ff9f1c; flex:none; width: auto;}
+        button.toggle-btn.btn-force-norm.active { background: #ff9f1c; color: #000; border-color: #ff9f1c; }
+
+    </style>
+</head>
+<body>
+
+    <h1>⚡ DQX ダメージ増幅計算機 v16</h1>
+
+    <div class="calculator-container">
+
+        <div class="step-section">
+            <div class="step-left">
+                <div class="step-label">
+                    <span class="step-icon">⚔️</span> 攻撃設定 & 基礎ダメージ
+                </div>
+                
+                <div class="settings-grid">
+                    <div class="settings-item">
+                        <span>職業</span>
+                        <select id="calcJob" onchange="updateOptions()">
+                            </select>
+                    </div>
+                    <div class="settings-item">
+                        <span>武器</span>
+                        <select id="calcWeapon" onchange="updateOptions()">
+                            </select>
+                    </div>
+                    <div class="settings-item">
+                        <span>特技</span>
+                        <select id="calcSkillSelect" onchange="calcBaseDamage()">
+                            </select>
+                    </div>
+                    <div class="settings-item">
+                        <span>バイキルト</span>
+                        <button class="toggle-btn btn-baiki active" id="btnBaiki" onclick="toggleBaiki(this)">ON</button>
+                    </div>
+                    <div class="settings-item">
+                        <span>敵守備力</span>
+                        <select id="calcBoss" onchange="calcBaseDamage()">
+                            <option value="760">ヤヌビ (760)</option>
+                            <option value="830">バオラ (830)</option>
+                        </select>
+                    </div>
+                    <div class="settings-item">
+                        <span>ルカニ / アヌビス</span>
+                        <div class="toggle-group">
+                            <button class="toggle-btn active" data-lukani="1.0" onclick="setLukani(this)">なし</button>
+                            <button class="toggle-btn" data-lukani="0.8" onclick="setLukani(this)">1段</button>
+                            <button class="toggle-btn" data-lukani="0.6" onclick="setLukani(this)">2段</button>
+                            <button class="toggle-btn" data-lukani="0.0" onclick="setLukani(this)" style="font-weight:bold;">アヌビス</button>
+                        </div>
+                    </div>
+                    
+                    <div class="calc-display">
+                        <div>攻: <span id="displayAtkR">0</span> (左<span id="displayAtkL">0</span>) / 守: <span id="displayDef">760</span></div>
+                        <input type="hidden" id="baseDmg" value="0">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step-result" id="res-base" style="align-self: flex-end; margin-bottom: 5px;">
+                <span id="baseValDisplay">0</span>
+                <small>START</small>
+            </div>
+        </div>
+
+        <div class="beam-connector" id="beam1"></div>
+
+        <div class="step-section">
+            <div class="step-left">
+                <div class="step-label"><span class="step-icon">🔥</span> 属性ダメージ枠</div>
+                <div class="input-group">
+                    <div class="input-item">
+                        <span>戦神ベルト等</span>
+                        <select id="attrBelt">
+                            <option value="0">なし</option>
+                            <option value="0.15">15%</option>
+                            <option value="0.14">14%</option>
+                            <option value="0.13">13%</option>
+                            <option value="0.12">12%</option>
+                            <option value="0.11">11%</option>
+                            <option value="0.10">10%</option>
+                            <option value="0.09">9%</option>
+                            <option value="0.08">8%</option>
+                            <option value="0.06">6%</option>
+                            <option value="0.05">5%</option>
+                            <option value="0.04">4%</option>
+                        </select>
+                    </div>
+                    <div class="input-item">
+                        <span>指輪/その他</span>
+                        <select id="attrRing">
+                            <option value="0">なし</option>
+                            <option value="0.05">5%</option>
+                            <option value="0.04">4%</option>
+                            <option value="0.03">3%</option>
+                            <option value="0.025">2.5%</option>
+                            <option value="0.02">2%</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="step-result" id="res-attr">1000<small>×属性</small></div>
+        </div>
+
+        <div class="beam-connector" id="beam2"></div>
+
+        <div class="step-section">
+            <div class="step-left">
+                <div class="step-label"><span class="step-icon">🐲</span> 種族特攻枠</div>
+                <div class="input-group">
+                    <div class="input-item">
+                        <span>戦神ベルト等</span>
+                        <select id="raceBelt">
+                            <option value="0">なし</option>
+                            <option value="0.12">12%</option>
+                            <option value="0.11">11%</option>
+                            <option value="0.10">10%</option>
+                            <option value="0.09">9%</option>
+                            <option value="0.08">8%</option>
+                            <option value="0.07">7%</option>
+                            <option value="0.06">6%</option>
+                            <option value="0.05">5%</option>
+                            <option value="0.04">4%</option>
+                        </select>
+                    </div>
+                    <div class="input-item">
+                        <span>断罪/武器等</span>
+                        <select id="raceRing">
+                            <option value="0">なし</option>
+                            <option value="0.11">11%</option>
+                            <option value="0.09">9%</option>
+                            <option value="0.07">7%</option>
+                            <option value="0.05">5%</option>
+                            <option value="0.03">3%</option>
+                        </select>
+                    </div>
+                    <div class="input-item" style="margin-left:5px;">
+                        <span>&nbsp;</span>
+                        <button class="toggle-btn btn-force-norm" id="btnForceNorm" onclick="toggleBtn(this)">F通常(+10%)</button>
+                    </div>
+                </div>
+            </div>
+            <div class="step-result" id="res-race">1000<small>×種族</small></div>
+        </div>
+
+        <div class="beam-connector" id="beam3"></div>
+
+        <div class="step-section">
+            <div class="step-left">
+                <div class="step-label"><span class="step-icon">📢</span> 与ダメUP枠</div>
+                <div class="step-controls toggle-group">
+                    <button class="toggle-btn group-dmg" data-val="0.5" onclick="toggleBtn(this)">ウォークライ</button>
+                    <button class="toggle-btn group-dmg" data-val="0.5" onclick="toggleBtn(this)">猛攻の書</button>
+                    <button class="toggle-btn group-mr" data-val="0.5" data-exclusive="mr" onclick="toggleBtn(this)">MR(大)</button>
+                    <button class="toggle-btn group-mr" data-val="0.2" data-exclusive="mr" onclick="toggleBtn(this)">MR(小)</button>
+                </div>
+            </div>
+            <div class="step-result" id="res-dmgup">1000<small>×強化</small></div>
+        </div>
+
+        <div class="beam-connector" id="beam4"></div>
+
+        <div class="step-section">
+            <div class="step-left">
+                <div class="step-label"><span class="step-icon">🪃</span> 敵の被ダメUP</div>
+                <div class="step-controls toggle-group">
+                    <button class="toggle-btn group-taken" data-val="0.5" onclick="toggleBtn(this)">レボル系</button>
+                    <button class="toggle-btn group-taken" data-val="0.5" onclick="toggleBtn(this)">災禍の陣</button>
+                </div>
+            </div>
+            <div class="step-result" id="res-taken">1000<small>×弱体</small></div>
+        </div>
+
+        <div class="beam-connector" id="beam5"></div>
+
+        <div class="step-section">
+            <div class="step-left">
+                <div class="step-label"><span class="step-icon">🛡️</span> 敵の属性耐性低下</div>
+                <div class="step-controls toggle-group">
+                    <button class="toggle-btn group-fb" data-val="1.0" data-exclusive="fb" onclick="toggleBtn(this)">FB(大)</button>
+                    <button class="toggle-btn group-fb" data-val="0.5" data-exclusive="fb" onclick="toggleBtn(this)">FB(小)</button>
+                    
+                    <button class="toggle-btn group-down" data-val="0.5" data-exclusive="down" onclick="toggleBtn(this)">低下50%</button>
+                    <button class="toggle-btn group-down" data-val="0.3" data-exclusive="down" onclick="toggleBtn(this)">低下30%</button>
+                </div>
+            </div>
+            <div class="step-result" id="res-fb">1000<small>×耐性</small></div>
+        </div>
+
+        <div class="beam-connector" id="beam6"></div>
+
+        <div class="result-panel">
+            <div style="font-size:0.9rem; color:#aaa; letter-spacing: 1px;">FINAL DAMAGE (Total)</div>
+            <div class="total-multiplier" id="totalMult">x 1.00 倍</div>
+            <div class="final-damage" id="finalResult">1000</div>
+            
+            <div id="breakdownDisplay" class="breakdown-display">
+                </div>
+            
+            <div class="compare-tools">
+                <button class="btn-snapshot" onclick="saveSnapshot()">📷 比較用に状態をキープ</button>
+                <div class="diff-display" id="diffDisplay">
+                    基準: <span id="snapshotVal">0</span> 
+                    <span id="diffVal" style="margin-left:10px;">±0</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const MAX_WIDTH_PX = 300;
+        const BASE_WIDTH_PX = 12;
+        let snapshotDamage = null; 
+        let lukaniRate = 1.0; 
+        
+        let currentHitBases = []; 
+        let currentHitCritBases = []; 
+
+        const FIXED_STR = 125;   
+        const FIXED_ALCH = 157;  
+
+        const jobs = {
+            'bato': { name: 'バトマス', str: 509, weapons: ['hayabusa', 'shugoryu'] },
+            'ranger': { name: 'レンジャー', str: 391, weapons: ['jusei'] },
+            'masen': { name: '魔法戦士', str: 397, weapons: ['nymph', 'hayabusa'] }
+        };
+
+        const weapons = {
+            'hayabusa': { name: 'はやぶさの剣', atk: 129, type: 'sword' },
+            'shugoryu': { name: '守護竜のつるぎ', atk: 284, type: 'sword' },
+            'jusei': { name: '呪星のツメ', atk: 180, type: 'claw' },
+            'nymph': { name: 'ニンフの妖弓', atk: 325, type: 'bow' }
+        };
+
+        const skills = {
+            'normal': { name: '通常攻撃', hits: [{m:1.0, t:'R'}] },
+            'bato_norm': { name: 'バト通常(二刀)', hits: [{m:1.0, t:'R'}, {m:1.0, t:'L'}] },
+            'haya_norm': { name: '隼通常', hits: [{m:1.0, t:'R'}, {m:0.7, t:'R'}] },
+            'haya_bato_norm': { name: '隼バト通常', hits: [{m:1.0, t:'R'}, {m:0.7, t:'R'}, {m:1.0, t:'L'}, {m:0.7, t:'L'}] },
+            'kokon': { name: '古今無双', hits: [{m:1.855, t:'R'}, {m:1.855, t:'R'}, {m:1.855, t:'R'}, {m:1.855, t:'R'}, {m:1.855, t:'L'}] },
+            'ultima': { name: 'アルテマソード', hits: [{m:5.376, t:'R'}, {m:5.376, t:'L'}] },
+            'fushicho': { name: '不死鳥天舞', hits: [{m:1.17, t:'R'}, {m:1.17, t:'R'}, {m:1.17, t:'R'}, {m:1.17, t:'R'}, {m:1.17, t:'L'}] },
+            'gigabreak': { name: 'ギガブレイク', hits: [{m:1500, t:'F'}, {m:1500, t:'F'}] },
+            'sunlight': { name: 'サンライトアロー', hits: [{m:1.064, t:'R'}, {m:1.064, t:'R'}, {m:1.064, t:'R'}, {m:1.064, t:'R'}] },
+            'shining': { name: 'シャイニングボウ', hits: [{m:0.975, t:'R'}, {m:0.975, t:'R'}, {m:0.975, t:'R'}, {m:0.975, t:'R'}] }
+        };
+
+        const inputs = {
+            base: document.getElementById('baseDmg'),
+            baseValDisplay: document.getElementById('baseValDisplay'),
+            attrBelt: document.getElementById('attrBelt'),
+            attrRing: document.getElementById('attrRing'),
+            raceBelt: document.getElementById('raceBelt'),
+            raceRing: document.getElementById('raceRing'),
+            btnForceNorm: document.getElementById('btnForceNorm'),
+            calcJob: document.getElementById('calcJob'),
+            calcWeapon: document.getElementById('calcWeapon'),
+            calcSkillSelect: document.getElementById('calcSkillSelect'),
+            btnBaiki: document.getElementById('btnBaiki'),
+            calcBoss: document.getElementById('calcBoss'),
+            displayAtkR: document.getElementById('displayAtkR'),
+            displayAtkL: document.getElementById('displayAtkL'),
+            displayDef: document.getElementById('displayDef')
+        };
+
+        const resultLabels = [
+            null, // step1は特殊
+            document.getElementById('res-attr'),
+            document.getElementById('res-race'),
+            document.getElementById('res-dmgup'),
+            document.getElementById('res-taken'),
+            document.getElementById('res-fb')
+        ];
+
+        const beams = [
+            document.getElementById('beam1'),
+            document.getElementById('beam2'),
+            document.getElementById('beam3'),
+            document.getElementById('beam4'),
+            document.getElementById('beam5'),
+            document.getElementById('beam6')
+        ];
+
+        function init() {
+            inputs.calcJob.innerHTML = '';
+            for(let key in jobs) {
+                let opt = document.createElement('option');
+                opt.value = key;
+                opt.text = `${jobs[key].name} (力${jobs[key].str})`;
+                inputs.calcJob.appendChild(opt);
+            }
+            updateOptions();
+        }
+
+        function updateOptions() {
+            const jobKey = inputs.calcJob.value;
+            const currentWep = inputs.calcWeapon.value;
+            inputs.calcWeapon.innerHTML = '';
+            jobs[jobKey].weapons.forEach(wKey => {
+                let w = weapons[wKey];
+                let opt = document.createElement('option');
+                opt.value = wKey;
+                opt.text = `${w.name} (攻${w.atk})`;
+                inputs.calcWeapon.appendChild(opt);
+            });
+            if (jobs[jobKey].weapons.includes(currentWep)) {
+                inputs.calcWeapon.value = currentWep;
+            }
+            updateSkillOptions();
+            calcBaseDamage();
+        }
+
+        function updateSkillOptions() {
+            const jobKey = inputs.calcJob.value;
+            const wepKey = inputs.calcWeapon.value;
+            if(!weapons[wepKey]) return;
+            const wepType = weapons[wepKey].type;
+            
+            inputs.calcSkillSelect.innerHTML = '';
+            let availSkills = ['normal'];
+
+            if (jobKey === 'bato') {
+                if (wepKey === 'hayabusa') {
+                    availSkills.push('haya_norm');
+                    availSkills.push('haya_bato_norm');
+                } else if (wepType === 'sword') {
+                    availSkills.push('bato_norm');
+                }
+                if (wepType === 'sword') {
+                    availSkills.push('kokon');
+                    availSkills.push('ultima');
+                    availSkills.push('fushicho');
+                    availSkills.push('gigabreak');
+                }
+            }
+            if (jobKey === 'masen') {
+                if (wepKey === 'hayabusa') {
+                    availSkills.push('haya_norm');
+                }
+                if (wepType === 'bow') {
+                    availSkills.push('sunlight');
+                    availSkills.push('shining');
+                }
+            }
+            
+            availSkills.forEach(sKey => {
+                if (skills[sKey]) {
+                    let opt = document.createElement('option');
+                    opt.value = sKey;
+                    opt.text = skills[sKey].name;
+                    inputs.calcSkillSelect.appendChild(opt);
+                }
+            });
+        }
+
+        function calcBaseDamage() {
+            const jobKey = inputs.calcJob.value;
+            const wepKey = inputs.calcWeapon.value;
+            const sKey = inputs.calcSkillSelect.value;
+            
+            const jobData = jobs[jobKey];
+            const wepData = weapons[wepKey];
+            const skillData = skills[sKey];
+
+            if (!jobData || !wepData || !skillData) return;
+
+            const baseStr = jobData.str + FIXED_STR;
+            const wepAtk = wepData.atk;
+            
+            let atkR = 0;
+            if (inputs.btnBaiki.classList.contains('active')) {
+                atkR = Math.floor(baseStr * 1.4) + wepAtk + FIXED_ALCH;
+            } else {
+                atkR = baseStr + wepAtk + FIXED_ALCH;
+            }
+
+            let atkL = 0;
+            if (skillData.hits.some(h => h.t === 'L')) {
+                const leftStr = Math.floor(baseStr * 0.75);
+                if (inputs.btnBaiki.classList.contains('active')) {
+                    atkL = Math.floor(leftStr * 1.4) + wepAtk + FIXED_ALCH; 
+                } else {
+                    atkL = leftStr + wepAtk + FIXED_ALCH;
+                }
+            }
+
+            inputs.displayAtkR.innerText = atkR;
+            inputs.displayAtkL.innerText = atkL;
+
+            let bossBaseDef = parseFloat(inputs.calcBoss.value) || 0;
+            let finalDef = Math.floor(bossBaseDef * lukaniRate);
+            inputs.displayDef.innerText = finalDef;
+
+            currentHitBases = [];
+            currentHitCritBases = [];
+            let totalBaseDmg = 0;
+
+            skillData.hits.forEach(hit => {
+                let dmg = 0;
+                let critDmg = 0;
+
+                if (hit.t === 'F') {
+                    dmg = hit.m; 
+                    critDmg = hit.m;
+                } else {
+                    let useAtk = (hit.t === 'L') ? atkL : atkR;
+                    let base = (useAtk / 2) - (finalDef / 4);
+                    if (base < 1) base = 1;
+                    dmg = base * hit.m;
+                    critDmg = useAtk * hit.m;
+                }
+                
+                currentHitBases.push(dmg);
+                currentHitCritBases.push(critDmg);
+                totalBaseDmg += Math.floor(dmg); 
+            });
+
+            inputs.base.value = totalBaseDmg;
+            inputs.baseValDisplay.innerText = totalBaseDmg.toLocaleString(); // 表示更新
+            calculate();
+        }
+
+        function toggleBaiki(btn) {
+            btn.classList.toggle('active');
+            btn.innerText = btn.classList.contains('active') ? "ON" : "OFF";
+            calcBaseDamage();
+        }
+
+        function setLukani(btn) {
+            btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            lukaniRate = parseFloat(btn.dataset.lukani);
+            calcBaseDamage();
+        }
+
+        function toggleBtn(btn) {
+            const isNowActive = !btn.classList.contains('active'); 
+            const exclusiveGroup = btn.dataset.exclusive; 
+            if (exclusiveGroup && isNowActive) {
+                document.querySelectorAll(`button[data-exclusive="${exclusiveGroup}"]`).forEach(b => {
+                    b.classList.remove('active');
+                });
+            }
+            if (isNowActive) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            calculate();
+        }
+
+        function getBeamColor(value, max) {
+            let ratio = Math.min(value / max, 1.3); 
+            let hue = 210 - (ratio * 210);
+            let saturation = 90;
+            let lightness = 60;
+            if (hue < 0) {
+                hue = 360 + hue; 
+                saturation = 100;
+                lightness = 70;
+            }
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        function calculate() {
+            let attrMag = 1.0 + parseFloat(inputs.attrBelt.value) + parseFloat(inputs.attrRing.value);
+            
+            let forceBonus = inputs.btnForceNorm.classList.contains('active') ? 0.1 : 0.0;
+            let raceMag = 1.0 + parseFloat(inputs.raceBelt.value) + parseFloat(inputs.raceRing.value) + forceBonus;
+
+            let dmgUpAdd = 0;
+            document.querySelectorAll('.group-dmg.active, .group-mr.active').forEach(btn => {
+                dmgUpAdd += parseFloat(btn.dataset.val);
+            });
+            let dmgUpMag = 1.0 + dmgUpAdd;
+
+            let takenAdd = 0;
+            document.querySelectorAll('.group-taken.active').forEach(btn => {
+                takenAdd += parseFloat(btn.dataset.val);
+            });
+            let takenMag = 1.0 + takenAdd;
+
+            let fbAdd = 0;
+            document.querySelectorAll('.group-fb.active, .group-down.active').forEach(btn => {
+                fbAdd += parseFloat(btn.dataset.val);
+            });
+            let fbMag = 1.0 + fbAdd;
+
+            // --- 通常ダメージ計算 ---
+            let sumD1=0, sumD2=0, sumD3=0, sumD4=0, sumD5=0;
+            let sumD6=0; 
+            let finalHitsNormal = [];
+
+            currentHitBases.forEach(baseVal => {
+                let d1 = Math.floor(baseVal);
+                let d2 = Math.floor(d1 * attrMag);
+                let d3 = Math.floor(d2 * raceMag);
+                let d4 = Math.floor(d3 * dmgUpMag);
+                let d5 = Math.floor(d4 * takenMag);
+                let d6 = Math.floor(d5 * fbMag);
+
+                sumD1 += d1; sumD2 += d2; sumD3 += d3; sumD4 += d4; sumD5 += d5;
+                
+                let capped = (d6 > 9999) ? 9999 : d6;
+                sumD6 += capped;
+                finalHitsNormal.push(d6); 
+            });
+
+            // --- 会心ダメージ計算 ---
+            let sumCrit=0;
+            let finalHitsCrit = [];
+
+            currentHitCritBases.forEach(baseVal => {
+                let d1 = Math.floor(baseVal);
+                let d2 = Math.floor(d1 * attrMag);
+                let d3 = Math.floor(d2 * raceMag);
+                let d4 = Math.floor(d3 * dmgUpMag);
+                let d5 = Math.floor(d4 * takenMag);
+                let d6 = Math.floor(d5 * fbMag);
+
+                let capped = (d6 > 9999) ? 9999 : d6;
+                sumCrit += capped;
+                finalHitsCrit.push(d6);
+            });
+
+            // ビーム描画
+            const values = [sumD1, sumD2, sumD3, sumD4, sumD5, sumD6];
+            const maxRef = Math.max((sumD1 || 1000) * 25, 2000); 
+
+            for (let i = 0; i < 6; i++) {
+                let val = values[i];
+                if (beams[i]) {
+                    let widthRatio = Math.sqrt(val) / Math.sqrt(maxRef);
+                    let width = Math.max(BASE_WIDTH_PX, Math.min(widthRatio * MAX_WIDTH_PX * 2.2, MAX_WIDTH_PX));
+                    let color = getBeamColor(val, maxRef);
+                    beams[i].style.width = width + "px";
+                    beams[i].style.backgroundColor = color;
+                    beams[i].style.boxShadow = `0 0 ${10 + width/4}px ${color}`;
+                }
+                if (resultLabels[i]) {
+                    let desc = "";
+                    if(i===1) desc = `×属性(x${attrMag.toFixed(3)})`;
+                    if(i===2) desc = `×種族(x${raceMag.toFixed(2)})`;
+                    if(i===3) desc = `×強化(x${dmgUpMag.toFixed(1)})`;
+                    if(i===4) desc = `×被ダメ増(x${takenMag.toFixed(1)})`;
+                    if(i===5) desc = `×耐性低下(x${fbMag.toFixed(1)})`;
+                    resultLabels[i].innerHTML = `${val.toLocaleString()}<small>${desc}</small>`;
+                }
+            }
+
+            const finalVal = sumD6;
+            document.getElementById('finalResult').innerText = finalVal.toLocaleString();
+            
+            const totalMultiplier = (sumD1 > 0) ? (finalVal / sumD1).toFixed(2) : "1.00";
+            document.getElementById('totalMult').innerText = `x ${totalMultiplier} 倍`;
+
+            updateBreakdown(finalHitsNormal, finalHitsCrit, sumCrit);
+            updateDiff(finalVal);
+        }
+
+        function updateBreakdown(hitsNorm, hitsCrit, sumCrit) {
+            const formatGroup = (hits) => {
+                if(hits.length === 0) return "---";
+                let groups = [];
+                let currentVal = hits[0];
+                let count = 1;
+                for(let i=1; i<hits.length; i++) {
+                    if(hits[i] === currentVal) {
+                        count++;
+                    } else {
+                        groups.push({val: currentVal, count: count});
+                        currentVal = hits[i];
+                        count = 1;
+                    }
+                }
+                groups.push({val: currentVal, count: count});
+
+                return groups.map(g => {
+                    let valStr = g.val.toLocaleString();
+                    let suffix = (g.count > 1) ? ` x ${g.count}` : "";
+                    let style = (g.val > 9999) ? "class='val-overflow'" : "";
+                    return `<span ${style}>${valStr}</span>${suffix}`;
+                }).join(" + ");
+            };
+
+            let htmlNorm = formatGroup(hitsNorm);
+            let htmlCrit = formatGroup(hitsCrit);
+
+            let displayHtml = `
+                <div class="breakdown-row">通常: ${htmlNorm}</div>
+                <div class="breakdown-row crit-label">会心(全段): ${sumCrit.toLocaleString()} <span style="color:#fff; font-weight:normal; font-size:0.8em;">(内訳: ${htmlCrit})</span></div>
+            `;
+            
+            document.getElementById('breakdownDisplay').innerHTML = displayHtml;
+        }
+
+        document.querySelectorAll('input, select').forEach(el => {
+            if(!el.id.startsWith('calc')) {
+                el.addEventListener('input', calculate);
+            }
+        });
+
+        function saveSnapshot() {
+            const current = parseInt(document.getElementById('finalResult').innerText.replace(/,/g, ''));
+            snapshotDamage = current;
+            document.getElementById('diffDisplay').style.display = "block";
+            document.getElementById('snapshotVal').innerText = current.toLocaleString();
+            updateDiff(current);
+        }
+
+        function updateDiff(currentVal) {
+            if (snapshotDamage === null) return;
+            const diff = currentVal - snapshotDamage;
+            const diffEl = document.getElementById('diffVal');
+            
+            if (diff > 0) {
+                diffEl.innerText = `▲ ${diff.toLocaleString()} UP!`;
+                diffEl.className = "diff-plus";
+            } else if (diff < 0) {
+                diffEl.innerText = `▼ ${diff.toLocaleString()} DOWN`;
+                diffEl.className = "diff-minus";
+            } else {
+                diffEl.innerText = "±0";
+                diffEl.className = "diff-even";
+            }
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
