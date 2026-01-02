@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DQX 防衛ダメージ計算機</title>
+    <title>DQX ビジュアルダメージ計算機 v17</title>
     <style>
         body {
             font-family: "Helvetica Neue", Arial, sans-serif;
@@ -124,10 +124,10 @@
             background: #2a2a35; color: #fff; cursor: pointer; font-size: 0.9rem;
         }
         
-        /* 設定パネル（Step1を統合） */
+        /* 設定パネル */
         .settings-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 2列レイアウト */
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
             margin-top: 5px;
             padding: 5px;
@@ -146,7 +146,7 @@
         }
         
         .calc-display { 
-            grid-column: 1 / -1; /* 全幅 */
+            grid-column: 1 / -1; 
             color: #aaa; font-size: 0.8rem; text-align: right; 
             border-top: 1px solid #444; margin-top: 5px; padding-top: 5px;
             display: flex; justify-content: space-between;
@@ -171,12 +171,10 @@
         button.toggle-btn.group-down.active { background: #e0aaff; color: #240046; border-color: #e0aaff; box-shadow: 0 0 8px rgba(224, 170, 255, 0.6); }
         
         button.toggle-btn.btn-baiki.active { background: #ff2a6d; border-color: #ff2a6d; }
-        /* アヌビスボタン（金色） */
         button.toggle-btn[data-lukani="0.0"].active {
             background: linear-gradient(135deg, #ffd700, #ff8c00); 
             color: #000; border-color: #ffd700; box-shadow: 0 0 10px #ffd700;
         }
-        
         button.toggle-btn.btn-force-norm { border: 1px dashed #ff9f1c; color:#ff9f1c; flex:none; width: auto;}
         button.toggle-btn.btn-force-norm.active { background: #ff9f1c; color: #000; border-color: #ff9f1c; }
 
@@ -184,7 +182,7 @@
 </head>
 <body>
 
-    <h1>⚡ DQX　防衛 ダメージ計算機 v16</h1>
+    <h1>⚡ DQX ダメージ増幅計算機 v17</h1>
 
     <div class="calculator-container">
 
@@ -375,8 +373,7 @@
             <div class="total-multiplier" id="totalMult">x 1.00 倍</div>
             <div class="final-damage" id="finalResult">1000</div>
             
-            <div id="breakdownDisplay" class="breakdown-display">
-                </div>
+            <div id="breakdownDisplay" class="breakdown-display"></div>
             
             <div class="compare-tools">
                 <button class="btn-snapshot" onclick="saveSnapshot()">📷 比較用に状態をキープ</button>
@@ -414,17 +411,23 @@
             'nymph': { name: 'ニンフの妖弓', atk: 325, type: 'bow' }
         };
 
+        // スキル定義 (m:倍率, t:タイプ, orb:宝珠倍率[0.06など])
+        // t='R' (右), 'L' (左), 'F' (固定)
         const skills = {
-            'normal': { name: '通常攻撃', hits: [{m:1.0, t:'R'}] },
-            'bato_norm': { name: 'バト通常(二刀)', hits: [{m:1.0, t:'R'}, {m:1.0, t:'L'}] },
-            'haya_norm': { name: '隼通常', hits: [{m:1.0, t:'R'}, {m:0.7, t:'R'}] },
-            'haya_bato_norm': { name: '隼バト通常', hits: [{m:1.0, t:'R'}, {m:0.7, t:'R'}, {m:1.0, t:'L'}, {m:0.7, t:'L'}] },
-            'kokon': { name: '古今無双', hits: [{m:1.855, t:'R'}, {m:1.855, t:'R'}, {m:1.855, t:'R'}, {m:1.855, t:'R'}, {m:1.855, t:'L'}] },
-            'ultima': { name: 'アルテマソード', hits: [{m:5.376, t:'R'}, {m:5.376, t:'L'}] },
-            'fushicho': { name: '不死鳥天舞', hits: [{m:1.17, t:'R'}, {m:1.17, t:'R'}, {m:1.17, t:'R'}, {m:1.17, t:'R'}, {m:1.17, t:'L'}] },
-            'gigabreak': { name: 'ギガブレイク', hits: [{m:1500, t:'F'}, {m:1500, t:'F'}] },
-            'sunlight': { name: 'サンライトアロー', hits: [{m:1.064, t:'R'}, {m:1.064, t:'R'}, {m:1.064, t:'R'}, {m:1.064, t:'R'}] },
-            'shining': { name: 'シャイニングボウ', hits: [{m:0.975, t:'R'}, {m:0.975, t:'R'}, {m:0.975, t:'R'}, {m:0.975, t:'R'}] }
+            'normal': { name: '通常攻撃', hits: [{m:1.0, t:'R'}], orb:0 },
+            'bato_norm': { name: 'バト通常(二刀)', hits: [{m:1.0, t:'R'}, {m:1.0, t:'L'}], orb:0 },
+            'haya_norm': { name: '隼/ツメ通常', hits: [{m:1.0, t:'R'}, {m:0.7, t:'R'}], orb:0 },
+            'haya_bato_norm': { name: '隼バト通常', hits: [{m:1.0, t:'R'}, {m:0.7, t:'R'}, {m:1.0, t:'L'}, {m:0.7, t:'L'}], orb:0 },
+            
+            'kokon': { name: '古今無双', hits: [{m:1.75, t:'R'}, {m:1.75, t:'R'}, {m:1.75, t:'R'}, {m:1.75, t:'R'}, {m:1.75, t:'L'}], orb:0.06 },
+            'ultima': { name: 'アルテマソード', hits: [{m:4.8, t:'R'}, {m:4.8, t:'L'}], orb:0.12 },
+            'fushicho': { name: '不死鳥天舞', hits: [{m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'L'}], orb:0.30 },
+            'gigabreak': { name: 'ギガブレイク', hits: [{m:1500, t:'F'}, {m:1500, t:'F'}], orb:0.30 },
+            
+            'liger': { name: 'ライガークラッシュ', hits: [{m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}], orb:0.06 },
+            
+            'sunlight': { name: 'サンライトアロー', hits: [{m:0.95, t:'R'}, {m:0.95, t:'R'}, {m:0.95, t:'R'}, {m:0.95, t:'R'}], orb:0.12 },
+            'shining': { name: 'シャイニングボウ', hits: [{m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}], orb:0.12 }
         };
 
         const inputs = {
@@ -446,7 +449,7 @@
         };
 
         const resultLabels = [
-            null, // step1は特殊
+            null, 
             document.getElementById('res-attr'),
             document.getElementById('res-race'),
             document.getElementById('res-dmgup'),
@@ -515,6 +518,12 @@
                     availSkills.push('gigabreak');
                 }
             }
+            if (jobKey === 'ranger') {
+                if (wepType === 'claw') {
+                    availSkills.push('haya_norm'); // 隼orツメ通常
+                    availSkills.push('liger');
+                }
+            }
             if (jobKey === 'masen') {
                 if (wepKey === 'hayabusa') {
                     availSkills.push('haya_norm');
@@ -577,19 +586,27 @@
             currentHitCritBases = [];
             let totalBaseDmg = 0;
 
+            // 宝珠倍率 (1.0 + orb%)
+            let orbMult = 1.0 + (skillData.orb || 0);
+
             skillData.hits.forEach(hit => {
                 let dmg = 0;
                 let critDmg = 0;
 
                 if (hit.t === 'F') {
-                    dmg = hit.m; 
-                    critDmg = hit.m;
+                    // 固定ダメにも宝珠は乗る (1500 * 1.3 = 1950)
+                    dmg = hit.m * orbMult; 
+                    critDmg = dmg;
                 } else {
                     let useAtk = (hit.t === 'L') ? atkL : atkR;
                     let base = (useAtk / 2) - (finalDef / 4);
                     if (base < 1) base = 1;
-                    dmg = base * hit.m;
-                    critDmg = useAtk * hit.m;
+                    
+                    // (基礎 * 倍率) * 宝珠倍率
+                    dmg = (base * hit.m) * orbMult;
+                    
+                    // 会心
+                    critDmg = (useAtk * hit.m) * orbMult;
                 }
                 
                 currentHitBases.push(dmg);
@@ -598,7 +615,7 @@
             });
 
             inputs.base.value = totalBaseDmg;
-            inputs.baseValDisplay.innerText = totalBaseDmg.toLocaleString(); // 表示更新
+            inputs.baseValDisplay.innerText = totalBaseDmg.toLocaleString();
             calculate();
         }
 
@@ -669,9 +686,11 @@
             let fbMag = 1.0 + fbAdd;
 
             // --- 通常ダメージ計算 ---
-            let sumD1=0, sumD2=0, sumD3=0, sumD4=0, sumD5=0;
-            let sumD6=0; 
+            let sumD1=0, sumD6=0;
             let finalHitsNormal = [];
+
+            // ビーム表示用
+            let sumD2=0, sumD3=0, sumD4=0, sumD5=0;
 
             currentHitBases.forEach(baseVal => {
                 let d1 = Math.floor(baseVal);
@@ -811,5 +830,4 @@
 
     </script>
 </body>
-
 </html>
