@@ -535,7 +535,7 @@
                     <div class="input-item">
                         <span>武器基礎</span>
                         <select id="attrWepBase">
-                            <option value="0">0%</option>
+                            <option value="0">なし</option>
                             <option value="0.01">1%</option>
                             <option value="0.02">2%</option>
                             <option value="0.03">3%</option>
@@ -589,7 +589,7 @@
                     <div class="input-item">
                         <span>武器基礎</span>
                         <select id="raceWepBase">
-                            <option value="0">0%</option>
+                            <option value="0">なし</option>
                             <option value="0.01">1%</option>
                             <option value="0.02">2%</option>
                             <option value="0.03">3%</option>
@@ -602,6 +602,18 @@
                             <option value="0.10">10%</option>
                         </select>
                     </div>
+                    
+                    <div class="input-item">
+                        <span>階級</span>
+                        <select id="classBonus">
+                            <option value="0">なし</option>
+                            <option value="0.04" selected>赤肩(4%)</option>
+                            <option value="0.03">青肩(3%)</option>
+                            <option value="0.02">緑肩(2%)</option>
+                            <option value="0.01">灰肩(1%)</option>
+                        </select>
+                    </div>
+
                     <div class="input-item" style="margin-left:5px;">
                         <span>&nbsp;</span>
                         <button class="toggle-btn btn-force-norm" id="btnForceNorm" onclick="toggleBtn(this)">F通常(+10%)</button>
@@ -728,10 +740,12 @@
             'fushicho': { name: '不死鳥天舞', hits: [{m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'L'}], orb:0.30 },
             'gigabreak': { name: 'ギガブレイク', hits: [{m:1500, t:'F'}, {m:1500, t:'F'}], orb:0.30 },
             
+            
             'liger': { name: 'ライガークラッシュ', hits: [{m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}], orb:0.06, critMult: 0.25 },
             
             'sunlight': { name: 'サンライトアロー', hits: [{m:0.95, t:'R'}, {m:0.95, t:'R'}, {m:0.95, t:'R'}, {m:0.95, t:'R'}], orb:0.12, critMult: 0.25 },
             'shining': { name: 'シャイニングボウ', hits: [{m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}], orb:0.12, critMult: 0.25 },
+            
             
             'ougi_ranbu': { name: 'おうぎ乱舞', hits: [{m:0.8, t:'R'}, {m:0.8, t:'R'}, {m:0.8, t:'R'}, {m:0.8, t:'R'}, {m:0.8, t:'R'}, {m:0.8, t:'R'}], orb:0.12, critMult: 0.5 },
             'cho_samidare': { name: '超さみだれ突き', hits: [{m:1.2, t:'R'}, {m:1.2, t:'R'}, {m:1.2, t:'R'}, {m:1.2, t:'R'}, {m:1.2, t:'R'}], orb:0.12, critMult: 0.5 },
@@ -750,6 +764,7 @@
             raceBelt: document.getElementById('raceBelt'),
             raceRing: document.getElementById('raceRing'),
             raceWepBase: document.getElementById('raceWepBase'),
+            classBonus: document.getElementById('classBonus'), // New Class Bonus
             btnForceNorm: document.getElementById('btnForceNorm'),
             calcJob: document.getElementById('calcJob'),
             calcWeapon: document.getElementById('calcWeapon'),
@@ -842,6 +857,7 @@
             const jobKey = inputs.calcJob.value;
             const currentWep = inputs.calcWeapon.value;
             
+            
             inputs.in_job_base.value = jobs[jobKey].base;
             inputs.in_job_passive.value = jobs[jobKey].passive;
 
@@ -863,6 +879,7 @@
                 inputs.in_wepL_base.value = wData.atk; 
             }
             
+            
             const wepType = weapons[inputs.calcWeapon.value].type;
             let s170 = 0;
             if(wepType === 'sword') s170 = 40;
@@ -872,13 +889,14 @@
             else if(wepType === 'fan') s170 = 50;
             document.getElementById('in_skill_170').value = s170;
 
+            
             let attrBaseVal = 0;
             if (wData && wData.attrVal) {
                 attrBaseVal = wData.attrVal;
             }
-
+            
             inputs.attrWepBase.value = attrBaseVal.toFixed(2).replace(/\.?0+$/, "");
-            if(inputs.attrWepBase.value === "") inputs.attrWepBase.value = "0"; 
+            if(inputs.attrWepBase.value === "") inputs.attrWepBase.value = "0"; // fallback
 
             updateSkillOptions();
             calcBaseDamage();
@@ -970,7 +988,7 @@
             ['in_neck_base', 'in_finger_base', 'in_chest_base', 'in_belt_base', 'in_card_base', 'in_other_base', 'in_emblem_base', 'in_badge_base'].forEach(id => {
                 totalAccBase += getNum(id);
             });
-
+            
             totalAccBase += parseFloat(inputs.in_heart_select.value) || 0;
 
             // 錬金効果 (Alchemy) の合計を算出
@@ -1108,6 +1126,7 @@
             mergedAdd += parseFloat(inputs.raceBelt.value);
             mergedAdd += parseFloat(inputs.raceRing.value);
             mergedAdd += parseFloat(inputs.raceWepBase.value);
+            mergedAdd += parseFloat(inputs.classBonus.value); 
             if(inputs.btnForceNorm.classList.contains('active')) mergedAdd += 0.1;
 
             document.querySelectorAll('.group-dmg.active, .group-mr.active').forEach(btn => {
