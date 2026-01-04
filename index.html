@@ -21,27 +21,22 @@
 
         .calculator-container {
             width: 100%;
-            max-width: 600px;
+            max-width: 720px;
             position: relative;
         }
 
         /* ステップセクション */
         .step-section {
-            background: rgba(30, 30, 40, 0.85);
+            background: rgba(30, 30, 40, 0.95);
             border-radius: 8px;
-            padding: 12px 15px;
+            padding: 15px;
             border: 1px solid rgba(255,255,255,0.1);
             z-index: 2;
-            backdrop-filter: blur(4px);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            margin-bottom: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         
         .step-left { display: flex; flex-direction: column; gap: 8px; flex: 1; }
-        .step-label { font-weight: bold; font-size: 0.95rem; color: #e0e0e0; display: flex; align-items: center; gap: 6px;}
+        .step-label { font-weight: bold; font-size: 1rem; color: #e0e0e0; display: flex; align-items: center; gap: 6px; margin-bottom: 5px;}
         .step-icon { font-size: 1.3rem; }
         
         .input-group { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -56,7 +51,18 @@
             margin-top: 5px;
             text-shadow: 0 0 5px rgba(5, 217, 232, 0.3);
         }
-        .step-result small { display: block; font-size: 0.7rem; color: #888; font-family: sans-serif; }
+        
+        /* 倍率表示の視認性強化 */
+        .step-result small { 
+            display: block; 
+            font-size: 1.1rem; 
+            color: #ffd700;    
+            font-family: sans-serif; 
+            margin-top: 4px;
+            font-weight: bold; 
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); 
+            letter-spacing: 0.5px;
+        }
 
         /* ビーム */
         .beam-connector {
@@ -75,25 +81,49 @@
             background: linear-gradient(145deg, #0f3460, #16213e);
             border-radius: 15px;
             border: 2px solid #ff2a6d;
-            padding: 25px;
+            padding: 20px;
             text-align: center;
             position: relative;
             z-index: 3;
             box-shadow: 0 0 20px rgba(255, 42, 109, 0.2);
         }
 
-        .final-damage { font-size: 3.5rem; font-weight: bold; color: #fff; line-height: 1.1; margin: 10px 0; }
-        .total-multiplier { font-size: 1rem; color: #ff9f1c; font-weight: bold; margin-bottom: 5px; }
+        /* 3カラム結果表示 */
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .res-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 10px 5px;
+        }
+        .res-label {
+            font-size: 0.8rem; color: #aaa; margin-bottom: 5px;
+        }
+        .res-val {
+            font-size: 1.4rem; font-weight: bold; font-family: "Consolas", monospace;
+        }
+        .val-exp { color: #00ff9d; text-shadow: 0 0 5px rgba(0, 255, 157, 0.3); font-size: 1.6rem; }
+        .val-norm { color: #fff; }
+        .val-crit { color: #ff2a6d; }
+
+        .total-multiplier { font-size: 0.9rem; color: #ff9f1c; font-weight: bold; margin-bottom: 5px; grid-column: 1 / -1; }
         
         /* 内訳表示エリア */
         .breakdown-display {
             background: rgba(0,0,0,0.3);
             border-radius: 8px;
             padding: 10px 15px;
-            margin-top: 15px;
+            margin-top: 10px;
             font-family: "Consolas", monospace;
             color: #88e1f2;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-align: left;
             border: 1px dashed #05d9e8;
         }
@@ -102,7 +132,7 @@
         .val-overflow { color: #ff9f1c; font-weight: bold; } 
 
         .compare-tools {
-            margin-top: 20px; padding-top: 15px; border-top: 1px dashed #555;
+            margin-top: 15px; padding-top: 10px; border-top: 1px dashed #555;
             display: flex; flex-direction: column; align-items: center; gap: 10px;
         }
         .btn-snapshot {
@@ -111,15 +141,29 @@
         }
         .btn-snapshot:hover { background: #555; color: #fff; border-color: #fff; }
         .diff-display {
-            font-size: 1.1rem; font-weight: bold; display: none;
+            font-size: 1rem; font-weight: bold; display: none;
             padding: 5px 15px; border-radius: 5px; background: rgba(0,0,0,0.4);
         }
         .diff-plus { color: #00ff9d; } .diff-minus { color: #ff3860; } .diff-even { color: #aaa; }
 
+        /* 入力フィールド */
         input[type="number"] { 
-            padding: 5px; width: 70px; border-radius: 4px; border: none; 
-            text-align: right; background: #2a2a35; color: white; font-size: 1rem;
+            padding: 5px; width: 65px; border-radius: 4px; border: none; 
+            text-align: right; font-size: 0.9rem;
+            transition: all 0.2s;
         }
+        
+        input.fixed-val {
+            background: #1a1a20; color: #666; border: 1px solid #333;
+            pointer-events: none; box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+        }
+        input.editable-val {
+            background: #252f3f; color: #fff; border: 1px solid #4da6ff; font-weight: bold;
+        }
+        input.editable-val:focus {
+            background: #304055; box-shadow: 0 0 8px rgba(77, 166, 255, 0.6); outline: none; border-color: #80c4ff;
+        }
+
         select { 
             padding: 5px; border-radius: 4px; border: none; 
             background: #2a2a35; color: #fff; cursor: pointer; font-size: 0.9rem;
@@ -129,7 +173,7 @@
         .settings-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 10px;
             margin-top: 5px;
             padding: 5px;
             width: 100%;
@@ -137,29 +181,52 @@
         .settings-item {
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            font-size: 0.8rem;
+            gap: 4px;
+            font-size: 0.85rem;
             color: #ccc;
         }
-        .settings-item select, .settings-item input {
-            width: 100%;
-            box-sizing: border-box;
-        }
         
+        /* 詳細ステータスグリッド */
+        .detail-stats {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: rgba(0,0,0,0.25);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 5px;
+            border: 1px solid #333;
+        }
+        .detail-stats h4 {
+            grid-column: 1 / -1; margin: 8px 0 4px 0; font-size: 0.85rem; color: #ff9f1c; 
+            border-bottom: 1px solid #444; padding-bottom: 2px;
+            display: flex; justify-content: space-between;
+        }
+        .section-total { color: #fff; font-weight: bold; }
+
+        .stat-row {
+            display: flex; flex-direction: column; gap: 3px;
+        }
+        .stat-label { font-size: 0.75rem; color: #999; }
+        .stat-inputs { display: flex; gap: 4px; align-items: center; }
+        .stat-inputs input, .stat-inputs select { width: 100%; }
+        .sub-label { font-size: 0.65rem; color: #666; margin-right: 2px; width: 12px; text-align: center;}
+
         .calc-display { 
             grid-column: 1 / -1; 
             color: #aaa; font-size: 0.8rem; text-align: right; 
-            border-top: 1px solid #444; margin-top: 5px; padding-top: 5px;
-            display: flex; justify-content: space-between;
+            border-top: 1px solid #444; margin-top: 5px; padding-top: 8px;
+            display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px;
         }
-        .calc-display span { color: #fff; font-weight: bold; font-size: 0.95rem; }
+        .calc-display span { color: #fff; font-weight: bold; font-size: 1rem; }
 
         /* トグルボタン */
         .toggle-group { display: flex; gap: 4px; flex-wrap: wrap; align-items: center;}
         button.toggle-btn {
-            padding: 6px 8px; border: 1px solid #444; background: #1f1f2e;
-            color: #888; cursor: pointer; border-radius: 6px; font-size: 0.75rem;
-            flex: 1; min-width: 40px; text-align: center;
+            padding: 8px 10px; border: 1px solid #444; background: #1f1f2e;
+            color: #888; cursor: pointer; border-radius: 6px; font-size: 0.8rem;
+            flex: 1; min-width: 50px; text-align: center;
         }
         button.toggle-btn:hover { background: #2f2f3e; }
         button.toggle-btn.active { color: white; font-weight: bold; }
@@ -190,6 +257,10 @@
         }
         button.toggle-btn.btn-force-norm { border: 1px dashed #ff9f1c; color:#ff9f1c; flex:none; width: auto;}
         button.toggle-btn.btn-force-norm.active { background: #ff9f1c; color: #000; border-color: #ff9f1c; }
+        
+        button#btnCritBuff.active {
+            background: #e91e63; border-color: #e91e63; color: white; box-shadow: 0 0 10px rgba(233, 30, 99, 0.5);
+        }
 
         .floating-wipe {
             position: fixed;
@@ -214,6 +285,23 @@
         .wipe-value { font-size: 1.6rem; font-weight: bold; color: #fff; font-family: "Consolas", monospace; }
 
         .separator { width: 100%; border-bottom: 1px dashed rgba(255,255,255,0.1); margin: 5px 0; }
+        
+        .toggle-details-btn {
+            grid-column: 1 / -1;
+            background: #2a2a35; border: 1px solid #444; color: #888;
+            padding: 8px; font-size: 0.8rem; cursor: pointer; border-radius: 4px;
+            margin-top: 5px; transition: 0.2s;
+        }
+        .toggle-details-btn:hover { background: #3a3a45; color: #fff; }
+
+        .legend {
+            font-size: 0.7rem; color: #888; margin-bottom: 5px; display:flex; gap: 10px; justify-content: flex-end;
+        }
+        .legend span::before {
+            content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px;
+        }
+        .l-fixed::before { background: #1a1a20; border: 1px solid #333; }
+        .l-edit::before { background: #252f3f; border: 1px solid #4da6ff; }
 
     </style>
 </head>
@@ -222,7 +310,7 @@
     <h1>⚡ DQX 防衛用ダメージ計算機</h1>
 
     <div id="floatingWipe" class="floating-wipe hidden">
-        <div class="wipe-label">Total Damage</div>
+        <div class="wipe-label">Expectation</div>
         <div class="wipe-value" id="wipeResult">0</div>
     </div>
 
@@ -240,7 +328,7 @@
                         <select id="calcJob" onchange="updateOptions()"></select>
                     </div>
                     <div class="settings-item">
-                        <span>武器</span>
+                        <span>武器 (メイン)</span>
                         <select id="calcWeapon" onchange="updateOptions()"></select>
                     </div>
                     <div class="settings-item">
@@ -258,7 +346,125 @@
                             <option value="830">バオラ (830)</option>
                         </select>
                     </div>
-                    <div class="settings-item">
+                    
+                    <div class="settings-item" style="grid-column: 1 / -1;">
+                        <span>会心率(%) & 補正</span>
+                        <div class="input-group" style="gap:5px; flex-wrap:nowrap;">
+                            <input type="number" id="critRate" value="24" step="0.1" class="editable-val" style="width:70px;">
+                            <button class="toggle-btn" id="btnCritBuff" onclick="toggleBtn(this)" style="flex:none; width:auto; padding:5px 15px; border-color:#e91e63; color:#ccc;">会心率UP(+15%)</button>
+                        </div>
+                        <div id="critDisplay" style="font-size:0.75rem; color:#aaa; text-align:right; margin-top:2px;">実質計算率: 24.0%</div>
+                    </div>
+                    
+                    <button class="toggle-details-btn" onclick="toggleDetails()">🔽 攻撃力詳細設定 (基礎/錬金) を開閉</button>
+
+                    <div id="detailStats" class="detail-stats" style="display:none;">
+                        
+                        <div style="grid-column:1/-1;" class="legend">
+                            <span class="l-fixed">固定値(編集不可)</span>
+                            <span class="l-edit">錬金/調整(入力可)</span>
+                        </div>
+
+                        <h4>
+                            ちから設定
+                            <span class="section-total">合計: <span id="txt_str_total">0</span></span>
+                        </h4>
+                        <div class="stat-row">
+                            <span class="stat-label">基本・パッシブ(自動)</span>
+                            <div class="stat-inputs"><input type="number" id="in_job_base" class="fixed-val" readonly><input type="number" id="in_job_passive" class="fixed-val" readonly></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">武神/禁断</span>
+                            <div class="stat-inputs"><span class="sub-label">武</span><input type="number" id="in_bushin" value="6" class="editable-val"><span class="sub-label">禁</span><input type="number" id="in_kindan" value="6" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">タネ/女神</span>
+                            <div class="stat-inputs"><span class="sub-label">種</span><input type="number" id="in_seed" value="12" class="editable-val"><span class="sub-label">木</span><input type="number" id="in_wood" value="33" class="editable-val"></div>
+                        </div>
+
+                        <h4>
+                            装備設定 (武器+アクセ)
+                            <span class="section-total">合計: <span id="txt_equip_total">0</span></span>
+                        </h4>
+                        <div class="stat-row">
+                            <span class="stat-label">武器右手</span>
+                            <div class="stat-inputs"><input type="number" id="in_wepR_base" class="fixed-val" readonly><input type="number" id="in_wepR_alch" value="0" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">武器左手</span>
+                            <div class="stat-inputs"><input type="number" id="in_wepL_base" class="fixed-val" readonly><input type="number" id="in_wepL_alch" value="0" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">顔(デスマスク)</span>
+                            <div class="stat-inputs"><input type="number" value="0" class="fixed-val" readonly><input type="number" value="0" class="fixed-val" disabled style="opacity:0.5;"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">首(チョーカー)</span>
+                            <div class="stat-inputs"><input type="number" id="in_neck_base" value="30" class="fixed-val" readonly><input type="number" id="in_neck_alch" value="40" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">指(断罪)</span>
+                            <div class="stat-inputs"><input type="number" id="in_finger_base" value="0" class="fixed-val" readonly><input type="number" id="in_finger_alch" value="6" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">胸(セト)</span>
+                            <div class="stat-inputs"><input type="number" id="in_chest_base" value="7" class="fixed-val" readonly><input type="number" id="in_chest_alch" value="12" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">腰(戦神/輝石)</span>
+                            <div class="stat-inputs"><input type="number" id="in_belt_base" value="0" class="fixed-val" readonly><input type="number" id="in_belt_alch" value="25" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">札(不思議)</span>
+                            <div class="stat-inputs"><input type="number" id="in_card_base" value="0" class="fixed-val" readonly><input type="number" id="in_card_alch" value="15" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">他(パワチャ)</span>
+                            <div class="stat-inputs"><input type="number" id="in_other_base" value="5" class="fixed-val" readonly><input type="number" id="in_other_alch" value="9" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">紋章(ハルファス)</span>
+                            <div class="stat-inputs"><input type="number" id="in_emblem_base" value="5" class="fixed-val" readonly><input type="number" id="in_emblem_alch" value="20" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">証(夢幻/邪教)</span>
+                            <div class="stat-inputs"><input type="number" id="in_badge_base" value="5" class="fixed-val" readonly><input type="number" id="in_badge_alch" value="0" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">こころ</span>
+                            <div class="stat-inputs">
+                                <select id="in_heart_select" onchange="calcBaseDamage()" style="width:100%; font-size:0.75rem;">
+                                    <option value="6">ガナサダイ(6)</option>
+                                    <option value="12">カブ(12)</option>
+                                    <option value="7">ユシュカ(7)</option>
+                                    <option value="15">ヴァレリア(15)</option>
+                                </select>
+                                <input type="number" id="in_heart_alch" value="0" class="editable-val">
+                            </div>
+                        </div>
+
+                        <h4>その他補正</h4>
+                        <div class="stat-row">
+                            <span class="stat-label">セット効果</span>
+                            <select id="in_set_select" onchange="updateSetEffect()">
+                                <option value="13">トライド (+13)</option>
+                                <option value="11">一角 (+11)</option>
+                                <option value="8">聖域 (+8)</option>
+                                <option value="0">なし</option>
+                            </select>
+                            <input type="hidden" id="in_set_alch" value="13">
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">スキル(0-170)</span>
+                            <div class="stat-inputs"><span class="sub-label">錬</span><input type="number" id="in_skill_170" value="0" class="editable-val"></div>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">スキル(180-200)</span>
+                            <div class="stat-inputs"><span class="sub-label">錬</span><input type="number" id="in_skill_alch" value="0" class="editable-val"></div>
+                        </div>
+                    </div>
+
+                    <div class="settings-item" style="grid-column: 1 / -1;">
                         <span>ルカニ / アヌビス</span>
                         <div class="toggle-group">
                             <button class="toggle-btn active" data-lukani="1.0" onclick="setLukani(this)">なし</button>
@@ -269,7 +475,8 @@
                     </div>
                     
                     <div class="calc-display">
-                        <div>攻: <span id="displayAtkR">0</span> (左<span id="displayAtkL">0</span>) / 守: <span id="displayDef">760</span></div>
+                        <div>表示攻撃力: <span id="displayAtkR">0</span> (左:<span id="displayAtkL">0</span>)</div>
+                        <div>敵守備力: <span id="displayDef">760</span></div>
                         <input type="hidden" id="baseDmg" value="0">
                     </div>
                 </div>
@@ -291,7 +498,7 @@
                         <span>ベルト</span>
                         <select id="attrBelt">
                             <option value="0">なし</option>
-                            <option value="0.15">15%</option>
+                            <option value="0.15" selected>15%</option>
                             <option value="0.14">14%</option>
                             <option value="0.13">13%</option>
                             <option value="0.12">12%</option>
@@ -309,7 +516,7 @@
                         <span>断罪</span>
                         <select id="attrRing">
                             <option value="0">なし</option>
-                            <option value="0.05">5%</option>
+                            <option value="0.05" selected>5%</option>
                             <option value="0.04">4%</option>
                             <option value="0.03">3%</option>
                             <option value="0.025">2.5%</option>
@@ -317,12 +524,28 @@
                         </select>
                     </div>
                     <div class="input-item">
-                        <span>心</span>
+                        <span>こころ</span>
                         <select id="attrHeart">
                             <option value="0">なし</option>
-                            <option value="0.03">3%</option>
+                            <option value="0.03" selected>3%</option>
                             <option value="0.02">2%</option>
                             <option value="0.01">1%</option>
+                        </select>
+                    </div>
+                    <div class="input-item">
+                        <span>武器基礎</span>
+                        <select id="attrWepBase">
+                            <option value="0">0%</option>
+                            <option value="0.01">1%</option>
+                            <option value="0.02">2%</option>
+                            <option value="0.03">3%</option>
+                            <option value="0.04">4%</option>
+                            <option value="0.05">5%</option>
+                            <option value="0.06">6%</option>
+                            <option value="0.07">7%</option>
+                            <option value="0.08">8%</option>
+                            <option value="0.09">9%</option>
+                            <option value="0.10">10%</option>
                         </select>
                     </div>
                 </div>
@@ -341,7 +564,7 @@
                         <span>ベルト</span>
                         <select id="raceBelt">
                             <option value="0">なし</option>
-                            <option value="0.12">12%</option>
+                            <option value="0.12" selected>12%</option>
                             <option value="0.11">11%</option>
                             <option value="0.10">10%</option>
                             <option value="0.09">9%</option>
@@ -356,11 +579,27 @@
                         <span>断罪</span>
                         <select id="raceRing">
                             <option value="0">なし</option>
-                            <option value="0.11">11%</option>
+                            <option value="0.11" selected>11%</option>
                             <option value="0.09">9%</option>
                             <option value="0.07">7%</option>
                             <option value="0.05">5%</option>
                             <option value="0.03">3%</option>
+                        </select>
+                    </div>
+                    <div class="input-item">
+                        <span>武器基礎</span>
+                        <select id="raceWepBase">
+                            <option value="0">0%</option>
+                            <option value="0.01">1%</option>
+                            <option value="0.02">2%</option>
+                            <option value="0.03">3%</option>
+                            <option value="0.04">4%</option>
+                            <option value="0.05">5%</option>
+                            <option value="0.06">6%</option>
+                            <option value="0.07">7%</option>
+                            <option value="0.08">8%</option>
+                            <option value="0.09">9%</option>
+                            <option value="0.10">10%</option>
                         </select>
                     </div>
                     <div class="input-item" style="margin-left:5px;">
@@ -373,11 +612,11 @@
 
                 <div class="toggle-group">
                     <button class="toggle-btn group-dmg" data-val="0.5" onclick="toggleBtn(this)">猛攻の書</button>
-                    <button class="toggle-btn group-dmg" data-val="1.0" onclick="toggleBtn(this)">ガジェット</button>
+                    <button class="toggle-btn group-dmg" id="btnGadget" data-val="1.0" onclick="toggleBtn(this)">ガジェット</button>
                     <button class="toggle-btn group-mr" data-val="0.5" data-exclusive="mr" onclick="toggleBtn(this)">MR(大)</button>
                     <button class="toggle-btn group-mr" data-val="0.2" data-exclusive="mr" onclick="toggleBtn(this)">MR(小)</button>
                     
-                    <div id="orbBadge" class="orb-badge">宝珠 0%</div>
+                    <div id="orbBadge" class="orb-badge">💎宝珠 0%</div>
                 </div>
 
             </div>
@@ -416,16 +655,29 @@
         <div class="beam-connector" id="beam5"></div>
 
         <div class="result-panel">
-            <div style="font-size:0.9rem; color:#aaa; letter-spacing: 1px;">FINAL DAMAGE (Total)</div>
             <div class="total-multiplier" id="totalMult">x 1.00 倍</div>
-            <div class="final-damage" id="finalResult">1000</div>
             
+            <div class="result-grid">
+                <div class="res-box">
+                    <div class="res-label">期待値</div>
+                    <div class="res-val val-exp" id="valExpected">0</div>
+                </div>
+                 <div class="res-box">
+                    <div class="res-label">会心なし</div>
+                    <div class="res-val val-norm" id="valNormal">0</div>
+                </div>
+                 <div class="res-box">
+                    <div class="res-label">会心</div>
+                    <div class="res-val val-crit" id="valCrit">0</div>
+                </div>
+            </div>
+
             <div id="breakdownDisplay" class="breakdown-display"></div>
             
             <div class="compare-tools">
                 <button class="btn-snapshot" onclick="saveSnapshot()">📷 比較用に状態をキープ</button>
                 <div class="diff-display" id="diffDisplay">
-                    基準: <span id="snapshotVal">0</span> 
+                    基準(期待値): <span id="snapshotVal">0</span> 
                     <span id="diffVal" style="margin-left:10px;">±0</span>
                 </div>
             </div>
@@ -442,20 +694,24 @@
         let currentHitBases = []; 
         let currentHitCritBases = []; 
 
-        const FIXED_STR = 125;   
-        const FIXED_ALCH = 157;  
-
         const jobs = {
-            'bato': { name: 'バトマス', str: 509, weapons: ['hayabusa', 'shugoryu'] },
-            'ranger': { name: 'レンジャー', str: 391, weapons: ['jusei'] },
-            'masen': { name: '魔法戦士', str: 397, weapons: ['nymph', 'hayabusa'] }
+            'bato': { name: 'バトマス', base: 419, passive: 90, weapons: ['shugoryu', 'hayabusa'] },
+            'masen': { name: '魔法戦士', base: 317, passive: 80, weapons: ['nymph', 'papilsag', 'furumu', 'shugoryu', 'hayabusa'] },
+            'ranger': { name: 'レンジャー', base: 311, passive: 80, weapons: ['jusei', 'nymph', 'papilsag', 'furumu'] },
+            'dougu': { name: 'どうぐ使い', base: 313, passive: 80, weapons: ['spear', 'nymph', 'papilsag', 'furumu'] },
+            'gad': { name: 'ガーディアン', base: 342, passive: 100, weapons: ['spear', 'shugoryu', 'hayabusa'] },
+            'odori': { name: '踊り子', base: 324, passive: 100, weapons: ['jusei', 'fan'] }
         };
 
         const weapons = {
-            'hayabusa': { name: 'はやぶさの剣', atk: 129, type: 'sword' },
+            'hayabusa': { name: 'はやぶさの剣改', atk: 129, type: 'sword' },
             'shugoryu': { name: '守護竜のつるぎ', atk: 284, type: 'sword' },
             'jusei': { name: '呪星のツメ', atk: 180, type: 'claw' },
-            'nymph': { name: 'ニンフの妖弓', atk: 325, type: 'bow' }
+            'nymph': { name: 'ニンフの妖弓', atk: 325, type: 'bow' },
+            'papilsag': { name: 'パピルサグの弓', atk: 295, type: 'bow', attrVal: 0.05 },
+            'furumu': { name: 'フルムの弓', atk: 315, type: 'bow', attrVal: 0.03 },
+            'fan': { name: '名軍師の羽扇', atk: 253, type: 'fan' },
+            'spear': { name: 'ミカヅチの槍', atk: 358, type: 'spear' }
         };
 
         const skills = {
@@ -472,10 +728,14 @@
             'fushicho': { name: '不死鳥天舞', hits: [{m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'L'}], orb:0.30 },
             'gigabreak': { name: 'ギガブレイク', hits: [{m:1500, t:'F'}, {m:1500, t:'F'}], orb:0.30 },
             
-            'liger': { name: 'ライガークラッシュ', hits: [{m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}], orb:0.06 },
+            'liger': { name: 'ライガークラッシュ', hits: [{m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}, {m:2.5, t:'R'}], orb:0.06, critMult: 0.25 },
             
-            'sunlight': { name: 'サンライトアロー', hits: [{m:0.95, t:'R'}, {m:0.95, t:'R'}, {m:0.95, t:'R'}, {m:0.95, t:'R'}], orb:0.12 },
-            'shining': { name: 'シャイニングボウ', hits: [{m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}], orb:0.12 }
+            'sunlight': { name: 'サンライトアロー', hits: [{m:0.95, t:'R'}, {m:0.95, t:'R'}, {m:0.95, t:'R'}, {m:0.95, t:'R'}], orb:0.12, critMult: 0.25 },
+            'shining': { name: 'シャイニングボウ', hits: [{m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}], orb:0.12, critMult: 0.25 },
+            
+            'ougi_ranbu': { name: 'おうぎ乱舞', hits: [{m:0.8, t:'R'}, {m:0.8, t:'R'}, {m:0.8, t:'R'}, {m:0.8, t:'R'}, {m:0.8, t:'R'}, {m:0.8, t:'R'}], orb:0.12, critMult: 0.5 },
+            'cho_samidare': { name: '超さみだれ突き', hits: [{m:1.2, t:'R'}, {m:1.2, t:'R'}, {m:1.2, t:'R'}, {m:1.2, t:'R'}, {m:1.2, t:'R'}], orb:0.12, critMult: 0.5 },
+            'samidare': { name: 'さみだれ突き', hits: [{m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}], orb:0.24, critMult: 0.25 }
         };
 
         const inputs = {
@@ -485,18 +745,44 @@
             attrBelt: document.getElementById('attrBelt'),
             attrRing: document.getElementById('attrRing'),
             attrHeart: document.getElementById('attrHeart'),
+            attrWepBase: document.getElementById('attrWepBase'),
             
             raceBelt: document.getElementById('raceBelt'),
             raceRing: document.getElementById('raceRing'),
+            raceWepBase: document.getElementById('raceWepBase'),
             btnForceNorm: document.getElementById('btnForceNorm'),
             calcJob: document.getElementById('calcJob'),
             calcWeapon: document.getElementById('calcWeapon'),
             calcSkillSelect: document.getElementById('calcSkillSelect'),
             btnBaiki: document.getElementById('btnBaiki'),
             calcBoss: document.getElementById('calcBoss'),
+            critRate: document.getElementById('critRate'),
+            btnCritBuff: document.getElementById('btnCritBuff'),
+            
             displayAtkR: document.getElementById('displayAtkR'),
             displayAtkL: document.getElementById('displayAtkL'),
-            displayDef: document.getElementById('displayDef')
+            displayDef: document.getElementById('displayDef'),
+            txtStrTotal: document.getElementById('txt_str_total'),
+            txtEquipTotal: document.getElementById('txt_equip_total'),
+
+            
+            in_job_base: document.getElementById('in_job_base'),
+            in_job_passive: document.getElementById('in_job_passive'),
+            in_bushin: document.getElementById('in_bushin'),
+            in_kindan: document.getElementById('in_kindan'),
+            in_seed: document.getElementById('in_seed'),
+            in_wood: document.getElementById('in_wood'),
+            
+            in_wepR_base: document.getElementById('in_wepR_base'),
+            in_wepR_alch: document.getElementById('in_wepR_alch'),
+            in_wepL_base: document.getElementById('in_wepL_base'),
+            in_wepL_alch: document.getElementById('in_wepL_alch'),
+
+            
+            in_heart_select: document.getElementById('in_heart_select'),
+            in_set_alch: document.getElementById('in_set_alch'),
+            in_skill_alch: document.getElementById('in_skill_alch'),
+            in_skill_170: document.getElementById('in_skill_170')
         };
 
         const resultLabels = [
@@ -520,7 +806,7 @@
             for(let key in jobs) {
                 let opt = document.createElement('option');
                 opt.value = key;
-                opt.text = `${jobs[key].name} (力${jobs[key].str})`;
+                opt.text = jobs[key].name;
                 inputs.calcJob.appendChild(opt);
             }
             updateOptions();
@@ -541,9 +827,24 @@
             observer.observe(document.querySelector('.result-panel'));
         }
 
+        function toggleDetails() {
+            const el = document.getElementById('detailStats');
+            el.style.display = (el.style.display === 'none') ? 'grid' : 'none';
+        }
+
+        function updateSetEffect() {
+            const val = document.getElementById('in_set_select').value;
+            document.getElementById('in_set_alch').value = val;
+            calcBaseDamage();
+        }
+
         function updateOptions() {
             const jobKey = inputs.calcJob.value;
             const currentWep = inputs.calcWeapon.value;
+            
+            inputs.in_job_base.value = jobs[jobKey].base;
+            inputs.in_job_passive.value = jobs[jobKey].passive;
+
             inputs.calcWeapon.innerHTML = '';
             jobs[jobKey].weapons.forEach(wKey => {
                 let w = weapons[wKey];
@@ -555,6 +856,30 @@
             if (jobs[jobKey].weapons.includes(currentWep)) {
                 inputs.calcWeapon.value = currentWep;
             }
+            
+            const wData = weapons[inputs.calcWeapon.value];
+            if(wData) {
+                inputs.in_wepR_base.value = wData.atk;
+                inputs.in_wepL_base.value = wData.atk; 
+            }
+            
+            const wepType = weapons[inputs.calcWeapon.value].type;
+            let s170 = 0;
+            if(wepType === 'sword') s170 = 40;
+            else if(wepType === 'bow') s170 = 40;
+            else if(wepType === 'claw') s170 = 75;
+            else if(wepType === 'spear') s170 = 55;
+            else if(wepType === 'fan') s170 = 50;
+            document.getElementById('in_skill_170').value = s170;
+
+            let attrBaseVal = 0;
+            if (wData && wData.attrVal) {
+                attrBaseVal = wData.attrVal;
+            }
+
+            inputs.attrWepBase.value = attrBaseVal.toFixed(2).replace(/\.?0+$/, "");
+            if(inputs.attrWepBase.value === "") inputs.attrWepBase.value = "0"; 
+
             updateSkillOptions();
             calcBaseDamage();
         }
@@ -598,6 +923,18 @@
                     availSkills.push('shining');
                 }
             }
+            if (jobKey === 'odori') {
+                if (wepKey === 'fan') {
+                    availSkills.push('bato_norm'); 
+                    availSkills.push('ougi_ranbu');
+                }
+            }
+            if (jobKey === 'gad') {
+                if (wepType === 'spear') {
+                    availSkills.push('cho_samidare'); 
+                    availSkills.push('samidare'); 
+                }
+            }
             
             availSkills.forEach(sKey => {
                 if (skills[sKey]) {
@@ -609,35 +946,73 @@
             });
         }
 
+        function getNum(id) {
+            let el = document.getElementById(id);
+            return el ? (parseFloat(el.value) || 0) : 0;
+        }
+
         function calcBaseDamage() {
-            const jobKey = inputs.calcJob.value;
-            const wepKey = inputs.calcWeapon.value;
             const sKey = inputs.calcSkillSelect.value;
-            
-            const jobData = jobs[jobKey];
-            const wepData = weapons[wepKey];
             const skillData = skills[sKey];
 
-            if (!jobData || !wepData || !skillData) return;
-
-            const baseStr = jobData.str + FIXED_STR;
-            const wepAtk = wepData.atk;
+            // 基礎攻撃力 (Base) の合計を算出
+            // グループ1: ちから
+            let totalStrBase = 0; 
+            totalStrBase += getNum('in_job_base');
+            totalStrBase += getNum('in_job_passive');
+            totalStrBase += getNum('in_bushin');
+            totalStrBase += getNum('in_kindan');
+            totalStrBase += getNum('in_seed');
+            totalStrBase += getNum('in_wood');
             
+            // グループ2: 装備(アクセ) 基礎
+            let totalAccBase = 0; 
+            ['in_neck_base', 'in_finger_base', 'in_chest_base', 'in_belt_base', 'in_card_base', 'in_other_base', 'in_emblem_base', 'in_badge_base'].forEach(id => {
+                totalAccBase += getNum(id);
+            });
+
+            totalAccBase += parseFloat(inputs.in_heart_select.value) || 0;
+
+            // 錬金効果 (Alchemy) の合計を算出
+            let totalAlch = 0;
+            ['in_neck_alch', 'in_finger_alch', 'in_chest_alch', 'in_belt_alch', 'in_card_alch', 'in_other_alch', 'in_emblem_alch', 'in_badge_alch', 'in_heart_alch'].forEach(id => {
+                totalAlch += getNum(id);
+            });
+            totalAlch += getNum('in_set_alch');
+            totalAlch += getNum('in_skill_alch');
+            totalAlch += getNum('in_skill_170'); 
+
+            // 表示用合計値更新
+            inputs.txtStrTotal.innerText = totalStrBase;
+            // 装備合計は「武器右＋アクセ基礎＋アクセ錬金」を表示用とする
+            let dispEquip = getNum('in_wepR_base') + getNum('in_wepR_alch') + totalAccBase + totalAlch; 
+            inputs.txtEquipTotal.innerText = dispEquip;
+
+
+            // --- 右手計算 ---
+            let rightBase = totalStrBase + totalAccBase + getNum('in_wepR_base');
+            let rightAlch = totalAlch + getNum('in_wepR_alch');
             let atkR = 0;
             if (inputs.btnBaiki.classList.contains('active')) {
-                atkR = Math.round((baseStr + wepAtk) * 1.4) + FIXED_ALCH;
+                // バイキ: 基礎 x 1.4 + 錬金
+                atkR = Math.floor(rightBase * 1.4) + rightAlch;
             } else {
-                atkR = baseStr + wepAtk + FIXED_ALCH;
+                atkR = rightBase + rightAlch;
             }
 
+            // --- 左手計算 (New Logic: Str*0.75 + Equip) ---
+            let leftStrPart = Math.floor(totalStrBase * 0.75);
+            let leftEquipPart = totalAccBase + getNum('in_wepL_base'); // Equip (Accs + Left Weapon)
+            let leftBaseComp = leftStrPart + leftEquipPart;
+            let leftAlch = totalAlch + getNum('in_wepL_alch');
+            
             let atkL = 0;
-            if (skillData.hits.some(h => h.t === 'L')) {
-                const leftBase = Math.floor((baseStr + wepAtk) * 0.75);
-                if (inputs.btnBaiki.classList.contains('active')) {
-                    atkL = Math.round(leftBase * 1.4) + FIXED_ALCH; 
-                } else {
-                    atkL = leftBase + FIXED_ALCH;
-                }
+            if (inputs.btnBaiki.classList.contains('active')) {
+                // バイキあり: 合計基礎 x 1.4 + 錬金
+                atkL = Math.floor(leftBaseComp * 1.4) + leftAlch;
+            } else {
+                // バイキなし: 合計基礎 + 錬金
+                atkL = leftBaseComp + leftAlch;
             }
 
             inputs.displayAtkR.innerText = atkR;
@@ -651,7 +1026,7 @@
             currentHitCritBases = [];
             let totalBaseDmg = 0;
 
-            let orbMult = 1.0 + (skillData.orb || 0);
+            if (!skillData) return;
 
             skillData.hits.forEach(hit => {
                 let dmg = 0;
@@ -666,7 +1041,7 @@
                     if (base < 1) base = 1;
                     
                     dmg = base * hit.m;
-                    critDmg = useAtk * hit.m;
+                    critDmg = useAtk * hit.m; // 会心は防御無視（簡易）
                 }
                 
                 currentHitBases.push(dmg);
@@ -725,12 +1100,14 @@
             let attrMag = 1.0 
                 + parseFloat(inputs.attrBelt.value) 
                 + parseFloat(inputs.attrRing.value)
-                + parseFloat(inputs.attrHeart.value);
+                + parseFloat(inputs.attrHeart.value)
+                + parseFloat(inputs.attrWepBase.value);
             
             let mergedAdd = 0.0;
 
             mergedAdd += parseFloat(inputs.raceBelt.value);
             mergedAdd += parseFloat(inputs.raceRing.value);
+            mergedAdd += parseFloat(inputs.raceWepBase.value);
             if(inputs.btnForceNorm.classList.contains('active')) mergedAdd += 0.1;
 
             document.querySelectorAll('.group-dmg.active, .group-mr.active').forEach(btn => {
@@ -744,10 +1121,10 @@
 
             const orbBadge = document.getElementById('orbBadge');
             if(orbVal > 0){
-                orbBadge.innerText = `宝珠 +${Math.round(orbVal*100)}%`;
+                orbBadge.innerText = `💎宝珠 +${Math.round(orbVal*100)}%`;
                 orbBadge.classList.add('active');
             } else {
-                orbBadge.innerText = `宝珠 0%`;
+                orbBadge.innerText = `💎宝珠 0%`;
                 orbBadge.classList.remove('active');
             }
 
@@ -765,11 +1142,11 @@
             });
             let fbMag = 1.0 + fbAdd;
 
-            let sumD1=0, sumD5=0;
-            let sumCapped=0; // 9999制限付き合計用
+            let sumD1=0;
+            let sumCapped=0; 
             
             let finalHitsNormal = [];
-            let sumD2=0, sumD3=0, sumD4=0;
+            let sumD2=0, sumD3=0, sumD4=0, sumD5=0;
 
             // 通常攻撃計算
             currentHitBases.forEach(baseVal => {
@@ -804,6 +1181,46 @@
                 finalHitsCrit.push(d5);
             });
 
+            // 会心率計算処理
+            let rawCritRate = parseFloat(inputs.critRate.value) || 0;
+            
+            // 会心UPボタンのチェック
+            if(inputs.btnCritBuff.classList.contains('active')){
+                rawCritRate += 15.0;
+            }
+            
+            // ガジェットのチェック
+            const btnGadget = document.getElementById('btnGadget');
+            if (btnGadget && btnGadget.classList.contains('active')) {
+                rawCritRate += 10.0;
+            }
+
+            // 特技ごとの補正
+            let critMult = 1.0;
+            if (skillData && skillData.critMult !== undefined) {
+                critMult = skillData.critMult;
+            }
+
+            // 最終的な計算用会心率
+            let finalCritRate = rawCritRate * critMult;
+            if(finalCritRate > 100) finalCritRate = 100;
+            
+            // 表示更新
+            let dispText = `計算使用率: ${finalCritRate.toFixed(2)}%`;
+            if (critMult < 1.0) dispText += ` (補正 x${critMult})`;
+            document.getElementById('critDisplay').innerText = dispText;
+
+            // 期待値計算
+            const cRate = finalCritRate / 100.0;
+            const expectedVal = Math.floor((sumCapped * (1.0 - cRate)) + (sumCritCapped * cRate));
+            
+            // 3つの数値を更新
+            document.getElementById('valExpected').innerText = expectedVal.toLocaleString();
+            document.getElementById('valNormal').innerText = sumCapped.toLocaleString();
+            document.getElementById('valCrit').innerText = sumCritCapped.toLocaleString();
+            
+            document.getElementById('wipeResult').innerText = expectedVal.toLocaleString();
+
             // ビーム描画
             const values = [sumD1, sumD2, sumD3, sumD4, sumD5];
             const maxRef = Math.max((sumD1 || 1000) * 25, 2000); 
@@ -828,16 +1245,11 @@
                 }
             }
 
-            const finalVal = sumCapped; // キャップ済みの合計を表示
-            const finalStr = finalVal.toLocaleString();
-            document.getElementById('finalResult').innerText = finalStr;
-            document.getElementById('wipeResult').innerText = finalStr;
-            
-            const totalMultiplier = (sumD1 > 0) ? (finalVal / sumD1).toFixed(2) : "1.00";
+            const totalMultiplier = (sumD1 > 0) ? (expectedVal / sumD1).toFixed(2) : "1.00";
             document.getElementById('totalMult').innerText = `x ${totalMultiplier} 倍`;
 
             updateBreakdown(finalHitsNormal, finalHitsCrit, sumCritCapped);
-            updateDiff(finalVal);
+            updateDiff(expectedVal);
         }
 
         function updateBreakdown(hitsNorm, hitsCrit, sumCrit) {
@@ -882,8 +1294,14 @@
             }
         });
 
+        
+        document.getElementById('detailStats').querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', calcBaseDamage);
+        });
+        document.getElementById('critRate').addEventListener('input', calculate);
+
         function saveSnapshot() {
-            const current = parseInt(document.getElementById('finalResult').innerText.replace(/,/g, ''));
+            const current = parseInt(document.getElementById('valExpected').innerText.replace(/,/g, ''));
             snapshotDamage = current;
             document.getElementById('diffDisplay').style.display = "block";
             document.getElementById('snapshotVal').innerText = current.toLocaleString();
