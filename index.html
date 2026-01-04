@@ -377,7 +377,7 @@
                     <button class="toggle-btn group-mr" data-val="0.5" data-exclusive="mr" onclick="toggleBtn(this)">MR(大)</button>
                     <button class="toggle-btn group-mr" data-val="0.2" data-exclusive="mr" onclick="toggleBtn(this)">MR(小)</button>
                     
-                    <div id="orbBadge" class="orb-badge">💎宝珠 0%</div>
+                    <div id="orbBadge" class="orb-badge">宝珠 0%</div>
                 </div>
 
             </div>
@@ -744,10 +744,10 @@
 
             const orbBadge = document.getElementById('orbBadge');
             if(orbVal > 0){
-                orbBadge.innerText = `💎宝珠 +${Math.round(orbVal*100)}%`;
+                orbBadge.innerText = `宝珠 +${Math.round(orbVal*100)}%`;
                 orbBadge.classList.add('active');
             } else {
-                orbBadge.innerText = `💎宝珠 0%`;
+                orbBadge.innerText = `宝珠 0%`;
                 orbBadge.classList.remove('active');
             }
 
@@ -766,9 +766,12 @@
             let fbMag = 1.0 + fbAdd;
 
             let sumD1=0, sumD5=0;
+            let sumCapped=0; // 9999制限付き合計用
+            
             let finalHitsNormal = [];
             let sumD2=0, sumD3=0, sumD4=0;
 
+            // 通常攻撃計算
             currentHitBases.forEach(baseVal => {
                 let d1 = Math.floor(baseVal);
                 let d2 = Math.floor(d1 * attrMag);
@@ -779,11 +782,13 @@
                 sumD1 += d1; sumD2 += d2; sumD3 += d3; sumD4 += d4; sumD5 += d5;
                 
                 let capped = (d5 > 9999) ? 9999 : d5;
-                sumD5 += capped;
+                sumCapped += capped;
                 finalHitsNormal.push(d5); 
             });
 
+            // 会心攻撃計算
             let sumCrit=0;
+            let sumCritCapped=0;
             let finalHitsCrit = [];
 
             currentHitCritBases.forEach(baseVal => {
@@ -794,10 +799,12 @@
                 let d5 = Math.floor(d4 * fbMag);
 
                 let capped = (d5 > 9999) ? 9999 : d5;
-                sumCrit += capped;
+                sumCrit += d5;
+                sumCritCapped += capped;
                 finalHitsCrit.push(d5);
             });
 
+            // ビーム描画
             const values = [sumD1, sumD2, sumD3, sumD4, sumD5];
             const maxRef = Math.max((sumD1 || 1000) * 25, 2000); 
 
@@ -821,7 +828,7 @@
                 }
             }
 
-            const finalVal = sumD5;
+            const finalVal = sumCapped; // キャップ済みの合計を表示
             const finalStr = finalVal.toLocaleString();
             document.getElementById('finalResult').innerText = finalStr;
             document.getElementById('wipeResult').innerText = finalStr;
@@ -829,7 +836,7 @@
             const totalMultiplier = (sumD1 > 0) ? (finalVal / sumD1).toFixed(2) : "1.00";
             document.getElementById('totalMult').innerText = `x ${totalMultiplier} 倍`;
 
-            updateBreakdown(finalHitsNormal, finalHitsCrit, sumCrit);
+            updateBreakdown(finalHitsNormal, finalHitsCrit, sumCritCapped);
             updateDiff(finalVal);
         }
 
