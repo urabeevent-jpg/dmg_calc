@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DQX 防衛用ダメージ計算機 v19</title>
+    <title>DQX 防衛用ダメージ計算機</title>
     <style>
         body {
             font-family: "Helvetica Neue", Arial, sans-serif;
@@ -14,7 +14,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-bottom: 80px; /* ワイプ用スペース確保 */
+            padding-bottom: 80px;
         }
 
         h1 { margin-bottom: 20px; font-size: 1.5rem; color: #ff2a6d; text-shadow: 0 0 10px rgba(255, 42, 109, 0.5); }
@@ -155,7 +155,7 @@
         .calc-display span { color: #fff; font-weight: bold; font-size: 0.95rem; }
 
         /* トグルボタン */
-        .toggle-group { display: flex; gap: 4px; flex-wrap: wrap;}
+        .toggle-group { display: flex; gap: 4px; flex-wrap: wrap; align-items: center;}
         button.toggle-btn {
             padding: 6px 8px; border: 1px solid #444; background: #1f1f2e;
             color: #888; cursor: pointer; border-radius: 6px; font-size: 0.75rem;
@@ -163,6 +163,16 @@
         }
         button.toggle-btn:hover { background: #2f2f3e; }
         button.toggle-btn.active { color: white; font-weight: bold; }
+
+        .orb-badge {
+            padding: 6px 8px; border: 1px solid #444; background: #1f1f2e;
+            color: #666; border-radius: 6px; font-size: 0.75rem;
+            flex: 1; min-width: 60px; text-align: center;
+            pointer-events: none;
+        }
+        .orb-badge.active {
+            border-color: #00e676; color: #00e676; background: rgba(0, 230, 118, 0.1); font-weight: bold;
+        }
 
         button.toggle-btn.group-dmg.active { background: #ff2a6d; border-color: #ff2a6d; box-shadow: 0 0 8px rgba(255, 42, 109, 0.6); }
         button.toggle-btn.group-mr.active { background: #05d9e8; color: #000; border-color: #05d9e8; box-shadow: 0 0 8px rgba(5, 217, 232, 0.6); }
@@ -175,10 +185,12 @@
             background: linear-gradient(135deg, #ffd700, #ff8c00); 
             color: #000; border-color: #ffd700; box-shadow: 0 0 10px #ffd700;
         }
+        button.toggle-btn[data-val="1.0"].group-dmg.active {
+            background: #ff5e00; border-color: #ff5e00; box-shadow: 0 0 10px #ff5e00;
+        }
         button.toggle-btn.btn-force-norm { border: 1px dashed #ff9f1c; color:#ff9f1c; flex:none; width: auto;}
         button.toggle-btn.btn-force-norm.active { background: #ff9f1c; color: #000; border-color: #ff9f1c; }
 
-        /* 追従ワイプ (Floating Wipe) */
         .floating-wipe {
             position: fixed;
             bottom: 20px;
@@ -191,17 +203,17 @@
             z-index: 1000;
             box-shadow: 0 5px 20px rgba(0,0,0,0.6);
             transition: opacity 0.3s, transform 0.3s;
-            /* 重要：クリックを透過させる */
             pointer-events: none;
             min-width: 120px;
         }
-        /* 隠すクラス */
         .floating-wipe.hidden {
             opacity: 0;
             transform: translateY(20px);
         }
         .wipe-label { font-size: 0.7rem; color: #aaa; margin-bottom: -3px;}
         .wipe-value { font-size: 1.6rem; font-weight: bold; color: #fff; font-family: "Consolas", monospace; }
+
+        .separator { width: 100%; border-bottom: 1px dashed rgba(255,255,255,0.1); margin: 5px 0; }
 
     </style>
 </head>
@@ -225,18 +237,15 @@
                 <div class="settings-grid">
                     <div class="settings-item">
                         <span>職業</span>
-                        <select id="calcJob" onchange="updateOptions()">
-                            </select>
+                        <select id="calcJob" onchange="updateOptions()"></select>
                     </div>
                     <div class="settings-item">
                         <span>武器</span>
-                        <select id="calcWeapon" onchange="updateOptions()">
-                            </select>
+                        <select id="calcWeapon" onchange="updateOptions()"></select>
                     </div>
                     <div class="settings-item">
                         <span>特技</span>
-                        <select id="calcSkillSelect" onchange="calcBaseDamage()">
-                            </select>
+                        <select id="calcSkillSelect" onchange="calcBaseDamage()"></select>
                     </div>
                     <div class="settings-item">
                         <span>バイキルト</span>
@@ -253,7 +262,7 @@
                         <span>ルカニ / アヌビス</span>
                         <div class="toggle-group">
                             <button class="toggle-btn active" data-lukani="1.0" onclick="setLukani(this)">なし</button>
-                            <button class="toggle-btn" data-lukani="0.8" onclick="setLukani(this)">1段</button>
+                            <button class="toggle-btn" data-lukani="0.7" onclick="setLukani(this)">1段</button>
                             <button class="toggle-btn" data-lukani="0.6" onclick="setLukani(this)">2段</button>
                             <button class="toggle-btn" data-lukani="0.0" onclick="setLukani(this)" style="font-weight:bold;">アヌビス</button>
                         </div>
@@ -325,7 +334,8 @@
 
         <div class="step-section">
             <div class="step-left">
-                <div class="step-label"><span class="step-icon">🐲</span> 種族特攻</div>
+                <div class="step-label"><span class="step-icon">📢</span> 与ダメージUP (種族・強化・宝珠)</div>
+                
                 <div class="input-group">
                     <div class="input-item">
                         <span>ベルト</span>
@@ -358,25 +368,23 @@
                         <button class="toggle-btn btn-force-norm" id="btnForceNorm" onclick="toggleBtn(this)">F通常(+10%)</button>
                     </div>
                 </div>
+
+                <div class="separator"></div>
+
+                <div class="toggle-group">
+                    <button class="toggle-btn group-dmg" data-val="0.5" onclick="toggleBtn(this)">猛攻の書</button>
+                    <button class="toggle-btn group-dmg" data-val="1.0" onclick="toggleBtn(this)">ガジェット</button>
+                    <button class="toggle-btn group-mr" data-val="0.5" data-exclusive="mr" onclick="toggleBtn(this)">MR(大)</button>
+                    <button class="toggle-btn group-mr" data-val="0.2" data-exclusive="mr" onclick="toggleBtn(this)">MR(小)</button>
+                    
+                    <div id="orbBadge" class="orb-badge">💎宝珠 0%</div>
+                </div>
+
             </div>
-            <div class="step-result" id="res-race">1000<small>×種族</small></div>
+            <div class="step-result" id="res-merged">1000<small>×全加算枠</small></div>
         </div>
 
         <div class="beam-connector" id="beam3"></div>
-
-        <div class="step-section">
-            <div class="step-left">
-                <div class="step-label"><span class="step-icon">📢</span> 与ダメUP</div>
-                <div class="step-controls toggle-group">
-                    <button class="toggle-btn group-dmg" data-val="0.5" onclick="toggleBtn(this)">猛攻の書</button>
-                    <button class="toggle-btn group-mr" data-val="0.5" data-exclusive="mr" onclick="toggleBtn(this)">MR(大)</button>
-                    <button class="toggle-btn group-mr" data-val="0.2" data-exclusive="mr" onclick="toggleBtn(this)">MR(小)</button>
-                </div>
-            </div>
-            <div class="step-result" id="res-dmgup">1000<small>×強化</small></div>
-        </div>
-
-        <div class="beam-connector" id="beam4"></div>
 
         <div class="step-section">
             <div class="step-left">
@@ -389,7 +397,7 @@
             <div class="step-result" id="res-taken">1000<small>×弱体</small></div>
         </div>
 
-        <div class="beam-connector" id="beam5"></div>
+        <div class="beam-connector" id="beam4"></div>
 
         <div class="step-section">
             <div class="step-left">
@@ -405,7 +413,7 @@
             <div class="step-result" id="res-fb">1000<small>×耐性</small></div>
         </div>
 
-        <div class="beam-connector" id="beam6"></div>
+        <div class="beam-connector" id="beam5"></div>
 
         <div class="result-panel">
             <div style="font-size:0.9rem; color:#aaa; letter-spacing: 1px;">FINAL DAMAGE (Total)</div>
@@ -456,6 +464,9 @@
             'haya_norm': { name: '隼/ツメ通常', hits: [{m:1.0, t:'R'}, {m:0.7, t:'R'}], orb:0 },
             'haya_bato_norm': { name: '隼バト通常', hits: [{m:1.0, t:'R'}, {m:0.7, t:'R'}, {m:1.0, t:'L'}, {m:0.7, t:'L'}], orb:0 },
             
+            'cho_haya': { name: '超はやぶさ斬り', hits: [{m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}], orb:0.36 },
+            'cho_haya_bato': { name: '超はやぶさ斬り(二刀)', hits: [{m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'R'}, {m:0.75, t:'L'}], orb:0.36 },
+
             'kokon': { name: '古今無双', hits: [{m:1.75, t:'R'}, {m:1.75, t:'R'}, {m:1.75, t:'R'}, {m:1.75, t:'R'}, {m:1.75, t:'L'}], orb:0.06 },
             'ultima': { name: 'アルテマソード', hits: [{m:4.8, t:'R'}, {m:4.8, t:'L'}], orb:0.12 },
             'fushicho': { name: '不死鳥天舞', hits: [{m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'R'}, {m:0.9, t:'L'}], orb:0.30 },
@@ -491,8 +502,7 @@
         const resultLabels = [
             null, 
             document.getElementById('res-attr'),
-            document.getElementById('res-race'),
-            document.getElementById('res-dmgup'),
+            document.getElementById('res-merged'),
             document.getElementById('res-taken'),
             document.getElementById('res-fb')
         ];
@@ -502,8 +512,7 @@
             document.getElementById('beam2'),
             document.getElementById('beam3'),
             document.getElementById('beam4'),
-            document.getElementById('beam5'),
-            document.getElementById('beam6')
+            document.getElementById('beam5')
         ];
 
         function init() {
@@ -515,8 +524,6 @@
                 inputs.calcJob.appendChild(opt);
             }
             updateOptions();
-            
-            // 追従ワイプの監視
             setupObserver();
         }
 
@@ -525,9 +532,9 @@
                 entries.forEach(entry => {
                     const wipe = document.getElementById('floatingWipe');
                     if (entry.isIntersecting) {
-                        wipe.classList.add('hidden'); // 結果が見えたら消す
+                        wipe.classList.add('hidden');
                     } else {
-                        wipe.classList.remove('hidden'); // 結果が見えなくなったら出す
+                        wipe.classList.remove('hidden');
                     }
                 });
             }, { threshold: 0.1 });
@@ -563,12 +570,12 @@
 
             if (jobKey === 'bato') {
                 if (wepKey === 'hayabusa') {
-                    availSkills.push('haya_norm');
                     availSkills.push('haya_bato_norm');
                 } else if (wepType === 'sword') {
                     availSkills.push('bato_norm');
                 }
                 if (wepType === 'sword') {
+                    availSkills.push('cho_haya_bato');
                     availSkills.push('kokon');
                     availSkills.push('ultima');
                     availSkills.push('fushicho');
@@ -584,6 +591,7 @@
             if (jobKey === 'masen') {
                 if (wepKey === 'hayabusa') {
                     availSkills.push('haya_norm');
+                    availSkills.push('cho_haya');
                 }
                 if (wepType === 'bow') {
                     availSkills.push('sunlight');
@@ -617,18 +625,18 @@
             
             let atkR = 0;
             if (inputs.btnBaiki.classList.contains('active')) {
-                atkR = Math.floor(baseStr * 1.4) + wepAtk + FIXED_ALCH;
+                atkR = Math.round((baseStr + wepAtk) * 1.4) + FIXED_ALCH;
             } else {
                 atkR = baseStr + wepAtk + FIXED_ALCH;
             }
 
             let atkL = 0;
             if (skillData.hits.some(h => h.t === 'L')) {
-                const leftStr = Math.floor(baseStr * 0.75);
+                const leftBase = Math.floor((baseStr + wepAtk) * 0.75);
                 if (inputs.btnBaiki.classList.contains('active')) {
-                    atkL = Math.floor(leftStr * 1.4) + wepAtk + FIXED_ALCH; 
+                    atkL = Math.round(leftBase * 1.4) + FIXED_ALCH; 
                 } else {
-                    atkL = leftStr + wepAtk + FIXED_ALCH;
+                    atkL = leftBase + FIXED_ALCH;
                 }
             }
 
@@ -650,15 +658,15 @@
                 let critDmg = 0;
 
                 if (hit.t === 'F') {
-                    dmg = hit.m * orbMult; 
+                    dmg = hit.m; 
                     critDmg = dmg;
                 } else {
                     let useAtk = (hit.t === 'L') ? atkL : atkR;
                     let base = (useAtk / 2) - (finalDef / 4);
                     if (base < 1) base = 1;
                     
-                    dmg = (base * hit.m) * orbMult;
-                    critDmg = (useAtk * hit.m) * orbMult;
+                    dmg = base * hit.m;
+                    critDmg = useAtk * hit.m;
                 }
                 
                 currentHitBases.push(dmg);
@@ -719,14 +727,31 @@
                 + parseFloat(inputs.attrRing.value)
                 + parseFloat(inputs.attrHeart.value);
             
-            let forceBonus = inputs.btnForceNorm.classList.contains('active') ? 0.1 : 0.0;
-            let raceMag = 1.0 + parseFloat(inputs.raceBelt.value) + parseFloat(inputs.raceRing.value) + forceBonus;
+            let mergedAdd = 0.0;
 
-            let dmgUpAdd = 0;
+            mergedAdd += parseFloat(inputs.raceBelt.value);
+            mergedAdd += parseFloat(inputs.raceRing.value);
+            if(inputs.btnForceNorm.classList.contains('active')) mergedAdd += 0.1;
+
             document.querySelectorAll('.group-dmg.active, .group-mr.active').forEach(btn => {
-                dmgUpAdd += parseFloat(btn.dataset.val);
+                mergedAdd += parseFloat(btn.dataset.val);
             });
-            let dmgUpMag = 1.0 + dmgUpAdd;
+
+            const sKey = inputs.calcSkillSelect.value;
+            const skillData = skills[sKey];
+            let orbVal = (skillData && skillData.orb) ? skillData.orb : 0;
+            mergedAdd += orbVal;
+
+            const orbBadge = document.getElementById('orbBadge');
+            if(orbVal > 0){
+                orbBadge.innerText = `💎宝珠 +${Math.round(orbVal*100)}%`;
+                orbBadge.classList.add('active');
+            } else {
+                orbBadge.innerText = `💎宝珠 0%`;
+                orbBadge.classList.remove('active');
+            }
+
+            let mergedMag = 1.0 + mergedAdd;
 
             let takenAdd = 0;
             document.querySelectorAll('.group-taken.active').forEach(btn => {
@@ -740,23 +765,22 @@
             });
             let fbMag = 1.0 + fbAdd;
 
-            let sumD1=0, sumD6=0;
+            let sumD1=0, sumD5=0;
             let finalHitsNormal = [];
-            let sumD2=0, sumD3=0, sumD4=0, sumD5=0;
+            let sumD2=0, sumD3=0, sumD4=0;
 
             currentHitBases.forEach(baseVal => {
                 let d1 = Math.floor(baseVal);
                 let d2 = Math.floor(d1 * attrMag);
-                let d3 = Math.floor(d2 * raceMag);
-                let d4 = Math.floor(d3 * dmgUpMag);
-                let d5 = Math.floor(d4 * takenMag);
-                let d6 = Math.floor(d5 * fbMag);
+                let d3 = Math.floor(d2 * mergedMag); 
+                let d4 = Math.floor(d3 * takenMag); 
+                let d5 = Math.floor(d4 * fbMag); 
 
                 sumD1 += d1; sumD2 += d2; sumD3 += d3; sumD4 += d4; sumD5 += d5;
                 
-                let capped = (d6 > 9999) ? 9999 : d6;
-                sumD6 += capped;
-                finalHitsNormal.push(d6); 
+                let capped = (d5 > 9999) ? 9999 : d5;
+                sumD5 += capped;
+                finalHitsNormal.push(d5); 
             });
 
             let sumCrit=0;
@@ -765,21 +789,19 @@
             currentHitCritBases.forEach(baseVal => {
                 let d1 = Math.floor(baseVal);
                 let d2 = Math.floor(d1 * attrMag);
-                let d3 = Math.floor(d2 * raceMag);
-                let d4 = Math.floor(d3 * dmgUpMag);
-                let d5 = Math.floor(d4 * takenMag);
-                let d6 = Math.floor(d5 * fbMag);
+                let d3 = Math.floor(d2 * mergedMag);
+                let d4 = Math.floor(d3 * takenMag);
+                let d5 = Math.floor(d4 * fbMag);
 
-                let capped = (d6 > 9999) ? 9999 : d6;
+                let capped = (d5 > 9999) ? 9999 : d5;
                 sumCrit += capped;
-                finalHitsCrit.push(d6);
+                finalHitsCrit.push(d5);
             });
 
-            // ビーム
-            const values = [sumD1, sumD2, sumD3, sumD4, sumD5, sumD6];
+            const values = [sumD1, sumD2, sumD3, sumD4, sumD5];
             const maxRef = Math.max((sumD1 || 1000) * 25, 2000); 
 
-            for (let i = 0; i < 6; i++) {
+            for (let i = 0; i < 5; i++) {
                 let val = values[i];
                 if (beams[i]) {
                     let widthRatio = Math.sqrt(val) / Math.sqrt(maxRef);
@@ -792,18 +814,17 @@
                 if (resultLabels[i]) {
                     let desc = "";
                     if(i===1) desc = `×属性(x${attrMag.toFixed(3)})`;
-                    if(i===2) desc = `×種族(x${raceMag.toFixed(2)})`;
-                    if(i===3) desc = `×強化(x${dmgUpMag.toFixed(1)})`;
-                    if(i===4) desc = `×被ダメ増(x${takenMag.toFixed(1)})`;
-                    if(i===5) desc = `×耐性低下(x${fbMag.toFixed(1)})`;
+                    if(i===2) desc = `×強化合計(x${mergedMag.toFixed(2)})`;
+                    if(i===3) desc = `×被ダメ増(x${takenMag.toFixed(1)})`;
+                    if(i===4) desc = `×耐性低下(x${fbMag.toFixed(1)})`;
                     resultLabels[i].innerHTML = `${val.toLocaleString()}<small>${desc}</small>`;
                 }
             }
 
-            const finalVal = sumD6;
+            const finalVal = sumD5;
             const finalStr = finalVal.toLocaleString();
             document.getElementById('finalResult').innerText = finalStr;
-            document.getElementById('wipeResult').innerText = finalStr; // ワイプも更新
+            document.getElementById('wipeResult').innerText = finalStr;
             
             const totalMultiplier = (sumD1 > 0) ? (finalVal / sumD1).toFixed(2) : "1.00";
             document.getElementById('totalMult').innerText = `x ${totalMultiplier} 倍`;
